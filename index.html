@@ -1,1 +1,1563 @@
-placeholder
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Wars - Retro Game Reselling Simulator</title>
+<style>
+/* ===== RESET & BASE ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a14;--bg2:#12122a;--bg3:#1a1a3e;--bg4:#222252;
+  --text:#e0e0e0;--dim:#888;--cyan:#00d4ff;--green:#00ff88;
+  --red:#ff4466;--yellow:#ffd700;--magenta:#ff66ff;--orange:#ff8844;
+  --blue:#4488ff;--white:#ffffff;
+  --panel-bg:rgba(18,18,42,0.95);--border:rgba(0,212,255,0.3);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Courier New',monospace;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:3px}
+
+/* ===== SCREENS ===== */
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+
+/* ===== TITLE SCREEN ===== */
+#title-screen{justify-content:center;align-items:center;text-align:center;background:radial-gradient(ellipse at center,var(--bg3) 0%,var(--bg) 70%)}
+#title-screen h1{font-size:3rem;color:var(--cyan);text-shadow:0 0 20px rgba(0,212,255,0.5);margin-bottom:0.5rem;letter-spacing:4px}
+#title-screen .subtitle{color:var(--yellow);font-size:1rem;margin-bottom:2rem}
+#title-screen .tagline{color:var(--dim);font-size:0.85rem;margin-bottom:2rem;font-style:italic}
+.menu-btn{background:transparent;border:2px solid var(--cyan);color:var(--cyan);padding:12px 40px;font-family:inherit;font-size:1rem;cursor:pointer;margin:6px;transition:all 0.2s;letter-spacing:2px}
+.menu-btn:hover{background:var(--cyan);color:var(--bg);box-shadow:0 0 15px rgba(0,212,255,0.5)}
+.menu-btn.secondary{border-color:var(--dim);color:var(--dim)}
+.menu-btn.secondary:hover{background:var(--dim);color:var(--bg)}
+
+/* ===== LENGTH SELECT ===== */
+#length-screen{justify-content:center;align-items:center;text-align:center}
+#length-screen h2{color:var(--cyan);font-size:1.8rem;margin-bottom:1.5rem}
+.length-card{background:var(--bg2);border:2px solid var(--border);padding:20px 40px;margin:8px;cursor:pointer;transition:all 0.2s;width:360px;text-align:left}
+.length-card:hover{border-color:var(--cyan);background:var(--bg3);box-shadow:0 0 10px rgba(0,212,255,0.3)}
+.length-card .name{color:var(--cyan);font-size:1.1rem;font-weight:bold}
+.length-card .details{color:var(--dim);font-size:0.8rem;margin-top:4px}
+.length-card .stats{color:var(--green);font-size:0.8rem;margin-top:4px}
+
+/* ===== NAME INPUT ===== */
+#name-screen{justify-content:center;align-items:center;text-align:center}
+#name-screen h2{color:var(--cyan);font-size:1.8rem;margin-bottom:1rem}
+#name-input{background:var(--bg2);border:2px solid var(--cyan);color:var(--cyan);padding:12px 20px;font-family:inherit;font-size:1.2rem;text-align:center;width:300px;outline:none}
+#name-input::placeholder{color:var(--dim)}
+
+/* ===== INTRO SCREEN ===== */
+#intro-screen{justify-content:center;align-items:center}
+#intro-text{max-width:600px;text-align:center;line-height:1.8;font-size:0.95rem}
+#intro-text .highlight{color:var(--green);font-weight:bold}
+#intro-text .warning{color:var(--red);font-weight:bold}
+#intro-text .em{color:var(--yellow);font-style:italic}
+
+/* ===== GAME SCREEN ===== */
+#game-screen{flex-direction:column}
+.header-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;min-height:36px}
+.header-left{display:flex;gap:20px;align-items:center;font-size:0.85rem}
+.header-right{font-size:0.85rem;color:var(--dim)}
+.stat-label{color:var(--dim)}
+.stat-cash{color:var(--green)}
+.stat-debt{color:var(--red)}
+.stat-bank{color:var(--blue)}
+.stat-net{color:var(--cyan);font-weight:bold}
+
+.body-wrap{display:flex;flex:1;overflow:hidden}
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.sidebar{width:260px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;padding:10px;flex-shrink:0}
+.sidebar h3{color:var(--cyan);font-size:0.85rem;margin-bottom:8px;text-align:center}
+.sidebar-section{margin-bottom:12px}
+.sidebar .stat-row{display:flex;justify-content:space-between;font-size:0.8rem;padding:2px 4px}
+.sidebar .inv-item{font-size:0.75rem;padding:1px 4px;color:var(--dim)}
+.rep-bar{font-size:0.8rem;text-align:center;margin:4px 0}
+
+/* Nav tabs */
+.nav-tabs{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.nav-tab{padding:8px 16px;cursor:pointer;font-family:inherit;font-size:0.8rem;color:var(--dim);background:transparent;border:none;border-bottom:2px solid transparent;transition:all 0.15s}
+.nav-tab:hover{color:var(--cyan);background:rgba(0,212,255,0.05)}
+.nav-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(0,212,255,0.1)}
+
+/* View area */
+.view-area{flex:1;overflow-y:auto;padding:12px 16px}
+.view-title{color:var(--cyan);font-size:1.1rem;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px}
+
+/* Tables */
+.game-table{width:100%;border-collapse:collapse;font-size:0.8rem}
+.game-table th{text-align:left;color:var(--cyan);padding:6px 8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg)}
+.game-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer}
+.game-table tr:hover td{background:rgba(0,212,255,0.08)}
+.game-table tr.selected td{background:rgba(0,212,255,0.15)}
+.rarity-C{color:var(--text)}.rarity-U{color:var(--green)}.rarity-R{color:var(--blue)}.rarity-V{color:var(--magenta)}.rarity-G{color:var(--yellow)}
+.deal-STEAL{color:var(--green);font-weight:bold}.deal-Good{color:var(--green)}.deal-Fair{color:var(--yellow)}.deal-High{color:var(--red)}.deal-RIP{color:var(--red);font-weight:bold}
+
+/* Action bar at bottom of view */
+.action-bar{display:flex;gap:8px;padding:8px 16px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;align-items:center;flex-wrap:wrap}
+.action-bar .info{color:var(--dim);font-size:0.8rem;flex:1}
+.action-btn{background:var(--bg3);border:1px solid var(--cyan);color:var(--cyan);padding:6px 16px;font-family:inherit;font-size:0.8rem;cursor:pointer;transition:all 0.15s}
+.action-btn:hover{background:var(--cyan);color:var(--bg)}
+.action-btn:disabled{opacity:0.3;cursor:not-allowed}
+.action-btn.danger{border-color:var(--red);color:var(--red)}
+.action-btn.danger:hover{background:var(--red);color:var(--bg)}
+.action-btn.success{border-color:var(--green);color:var(--green)}
+.action-btn.success:hover{background:var(--green);color:var(--bg)}
+
+/* Bank inputs */
+.bank-row{display:flex;gap:8px;align-items:center;margin:8px 0}
+.bank-input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;font-family:inherit;font-size:0.85rem;width:120px;outline:none}
+.bank-input:focus{border-color:var(--cyan)}
+
+/* Venue cards */
+.venue-card{background:var(--bg3);border:1px solid var(--border);padding:12px;margin:8px 0;transition:all 0.2s}
+.venue-card.current{border-color:var(--cyan);box-shadow:0 0 8px rgba(0,212,255,0.2)}
+.venue-card.locked{opacity:0.5}
+.venue-card .venue-name{color:var(--cyan);font-size:1rem;font-weight:bold}
+.venue-card .venue-desc{color:var(--dim);font-size:0.8rem;margin:4px 0}
+.venue-card .venue-stats{font-size:0.8rem;color:var(--text);margin-top:6px}
+
+/* Price guide */
+.system-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px;margin:3px;font-family:inherit;font-size:0.75rem;cursor:pointer}
+.system-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* News bar */
+.news-bar{padding:4px 16px;background:var(--bg2);border-top:1px solid var(--border);font-size:0.75rem;color:var(--dim);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.news-bar span.label{color:var(--cyan);font-weight:bold}
+
+/* Footer */
+.footer{display:flex;justify-content:space-between;padding:4px 16px;background:var(--bg2);border-top:1px solid var(--border);font-size:0.7rem;color:var(--dim);flex-shrink:0}
+
+/* ===== EVENT MODAL ===== */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:100;justify-content:center;align-items:center}
+.modal-overlay.active{display:flex}
+.modal-box{background:var(--bg2);border:2px solid var(--cyan);padding:24px;max-width:500px;width:90%;text-align:center;box-shadow:0 0 30px rgba(0,212,255,0.3)}
+.modal-box .event-icon{font-size:2.5rem;margin-bottom:10px}
+.modal-box .event-name{color:var(--cyan);font-size:1.2rem;font-weight:bold;margin-bottom:8px}
+.modal-box .event-msg{color:var(--text);font-size:0.9rem;margin-bottom:16px;line-height:1.6}
+.modal-box .event-choices{display:flex;flex-direction:column;gap:8px}
+.choice-btn{background:var(--bg3);border:1px solid var(--cyan);color:var(--cyan);padding:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;transition:all 0.15s}
+.choice-btn:hover{background:var(--cyan);color:var(--bg)}
+
+/* ===== GAME OVER ===== */
+#gameover-screen{justify-content:center;align-items:center;text-align:center}
+#gameover-screen h1{color:var(--yellow);font-size:2rem;margin-bottom:8px}
+.go-reason{color:var(--dim);margin-bottom:20px;font-style:italic}
+.go-stats{text-align:left;display:inline-block;font-size:0.85rem;line-height:2}
+.go-stats .label{color:var(--dim);display:inline-block;width:180px}
+.go-stats .value{font-weight:bold}
+.go-rating{margin:20px 0;padding:16px;background:var(--bg3);border:1px solid var(--yellow)}
+.go-rating .rating-name{color:var(--yellow);font-size:1.4rem;font-weight:bold}
+.go-rating .rating-desc{color:var(--text);font-size:0.85rem;margin-top:6px}
+
+/* ===== LEADERBOARD ===== */
+.leaderboard{margin:16px 0;font-size:0.8rem}
+.leaderboard table{width:100%;max-width:500px;margin:0 auto;border-collapse:collapse}
+.leaderboard th{color:var(--cyan);padding:4px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.leaderboard td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.leaderboard .rank-1{color:var(--yellow)}.leaderboard .rank-2{color:var(--dim)}.leaderboard .rank-3{color:var(--orange)}
+
+/* ===== NOTIFICATION ===== */
+.notification{position:fixed;top:50px;right:20px;background:var(--bg3);border:1px solid var(--cyan);color:var(--cyan);padding:10px 20px;font-family:inherit;font-size:0.85rem;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.notification.show{opacity:1}
+.notification.error{border-color:var(--red);color:var(--red)}
+.notification.success{border-color:var(--green);color:var(--green)}
+
+/* ===== TURN SUMMARY MODAL ===== */
+.turn-summary{font-size:0.85rem;line-height:1.8;text-align:left;margin:10px 0}
+
+/* Responsive */
+@media(max-width:800px){
+  .sidebar{display:none}
+  .header-left{gap:10px;font-size:0.75rem}
+  .nav-tab{padding:6px 10px;font-size:0.7rem}
+  .game-table{font-size:0.7rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== NOTIFICATION ===== -->
+<div id="notification" class="notification"></div>
+
+<!-- ===== TITLE SCREEN ===== -->
+<div id="title-screen" class="screen active">
+  <h1>GAME WARS</h1>
+  <div class="subtitle">Retro Game Reselling Simulator</div>
+  <div class="tagline">Buy low. Sell high. Don't get scammed.</div>
+  <div>
+    <button class="menu-btn" onclick="showScreen('length-screen')">NEW GAME</button>
+  </div>
+  <div style="margin-top:30px">
+    <button class="menu-btn secondary" onclick="showLeaderboardFromTitle()">LEADERBOARD</button>
+  </div>
+</div>
+
+<!-- ===== LENGTH SELECT ===== -->
+<div id="length-screen" class="screen">
+  <h2>Choose Game Length</h2>
+  <div class="length-card" onclick="selectLength(25)">
+    <div class="name">Quick Game - 25 turns (~15 min)</div>
+    <div class="stats">Start: $800 cash / $100 debt / Venues 70% off</div>
+    <div class="details">Fast-paced, more events, lower stakes</div>
+  </div>
+  <div class="length-card" onclick="selectLength(50)">
+    <div class="name">Standard Game - 50 turns (~30 min)</div>
+    <div class="stats">Start: $650 cash / $200 debt / Venues 45% off</div>
+    <div class="details">Balanced experience for most players</div>
+  </div>
+  <div class="length-card" onclick="selectLength(100)">
+    <div class="name">Marathon - 100 turns (~60 min)</div>
+    <div class="stats">Start: $500 cash / $300 debt / Full venue prices</div>
+    <div class="details">The full experience, build a true empire</div>
+  </div>
+</div>
+
+<!-- ===== NAME INPUT ===== -->
+<div id="name-screen" class="screen">
+  <h2>What's Your Name, Reseller?</h2>
+  <div style="margin:16px 0">
+    <input type="text" id="name-input" placeholder="Enter your name" maxlength="20" autofocus>
+  </div>
+  <button class="menu-btn" onclick="submitName()">LET'S GO</button>
+</div>
+
+<!-- ===== INTRO SCREEN ===== -->
+<div id="intro-screen" class="screen">
+  <div id="intro-text"></div>
+  <div style="margin-top:24px">
+    <button class="menu-btn" onclick="startGame()">BEGIN YOUR JOURNEY</button>
+  </div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="game-screen" class="screen">
+  <div class="header-bar">
+    <div class="header-left">
+      <span><span class="stat-label">Turn </span><span id="hdr-turn">1/100</span></span>
+      <span><span class="stat-label">Cash </span><span class="stat-cash" id="hdr-cash">$500</span></span>
+      <span><span class="stat-label">Debt </span><span class="stat-debt" id="hdr-debt">$300</span></span>
+      <span><span class="stat-label">Bank </span><span class="stat-bank" id="hdr-bank">$0</span></span>
+      <span><span class="stat-label">Net </span><span class="stat-net" id="hdr-net">$200</span></span>
+    </div>
+    <div class="header-right" id="hdr-venue">eBay Listings</div>
+  </div>
+  <div class="body-wrap">
+    <div class="main-content">
+      <div class="nav-tabs" id="nav-tabs">
+        <button class="nav-tab active" data-view="buy" onclick="switchView('buy')">Buy</button>
+        <button class="nav-tab" data-view="sell" onclick="switchView('sell')">Sell</button>
+        <button class="nav-tab" data-view="inventory" onclick="switchView('inventory')">Inventory</button>
+        <button class="nav-tab" data-view="venue" onclick="switchView('venue')">Venues</button>
+        <button class="nav-tab" data-view="upgrade" onclick="switchView('upgrade')">Upgrades</button>
+        <button class="nav-tab" data-view="bank" onclick="switchView('bank')">Bank</button>
+        <button class="nav-tab" data-view="prices" onclick="switchView('prices')">Price Guide</button>
+      </div>
+      <div class="view-area" id="view-area"></div>
+      <div class="action-bar" id="action-bar"></div>
+    </div>
+    <div class="sidebar" id="sidebar"></div>
+  </div>
+  <div class="news-bar" id="news-bar"><span class="label">NEWS:</span> Welcome to Game Wars!</div>
+  <div class="footer">
+    <span>Game Wars v1.0</span>
+    <span id="footer-hint">Select a game to buy or sell</span>
+  </div>
+</div>
+
+<!-- ===== EVENT MODAL ===== -->
+<div id="event-modal" class="modal-overlay">
+  <div class="modal-box" id="event-box"></div>
+</div>
+
+<!-- ===== TURN SUMMARY MODAL ===== -->
+<div id="turn-modal" class="modal-overlay">
+  <div class="modal-box" id="turn-box"></div>
+</div>
+
+<!-- ===== GAME OVER ===== -->
+<div id="gameover-screen" class="screen"></div>
+
+<script>
+// =============================================================================
+// DATA
+// =============================================================================
+
+const Rarity = {COMMON:"Common",UNCOMMON:"Uncommon",RARE:"Rare",VERY_RARE:"Very Rare",GRAIL:"Grail"};
+const Condition = {LOOSE:"Loose",CIB:"CIB",SEALED:"Sealed",GRADED:"Graded"};
+const CONDITION_MULT = {Loose:1.0,CIB:2.5,Sealed:6.0,Graded:15.0};
+const RARITY_ORDER = ["Common","Uncommon","Rare","Very Rare","Grail"];
+
+const GAME_CATALOG = [
+  // NES
+  {name:"Super Mario Bros.",system:"NES",base:15,rarity:"Common",minM:0.3,maxM:2.0,desc:"The classic that started it all",icon:"\u{1F344}"},
+  {name:"Legend of Zelda",system:"NES",base:25,rarity:"Common",minM:0.4,maxM:2.5,desc:"Gold cartridge glory",icon:"\u2694\uFE0F"},
+  {name:"Contra",system:"NES",base:30,rarity:"Uncommon",minM:0.5,maxM:3.0,desc:"Up up down down...",icon:"\u{1F52B}"},
+  {name:"Castlevania",system:"NES",base:25,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Whip it good",icon:"\u{1F9DB}"},
+  {name:"Mega Man 2",system:"NES",base:25,rarity:"Uncommon",minM:0.5,maxM:3.0,desc:"The blue bomber's best",icon:"\u{1F916}"},
+  {name:"Mike Tyson's Punch-Out!!",system:"NES",base:20,rarity:"Common",minM:0.4,maxM:2.5,desc:"007 373 5963",icon:"\u{1F94A}"},
+  {name:"Little Samson",system:"NES",base:800,rarity:"Very Rare",minM:0.6,maxM:2.0,desc:"Late release gem",icon:"\u2728"},
+  {name:"Stadium Events",system:"NES",base:8000,rarity:"Grail",minM:0.5,maxM:3.0,desc:"The holy grail of NES",icon:"\u{1F3C6}"},
+  {name:"Duck Tales",system:"NES",base:20,rarity:"Common",minM:0.3,maxM:2.5,desc:"Woo-oo!",icon:"\u{1F986}"},
+  {name:"Metroid",system:"NES",base:20,rarity:"Common",minM:0.4,maxM:2.0,desc:"The original bounty hunter",icon:"\u{1F680}"},
+  // SNES
+  {name:"Super Mario World",system:"SNES",base:20,rarity:"Common",minM:0.3,maxM:2.0,desc:"96 exits of perfection",icon:"\u{1F31F}"},
+  {name:"A Link to the Past",system:"SNES",base:30,rarity:"Common",minM:0.4,maxM:2.5,desc:"Top 5 game of all time",icon:"\u2694\uFE0F"},
+  {name:"Chrono Trigger",system:"SNES",base:150,rarity:"Rare",minM:0.5,maxM:3.0,desc:"Time-traveling masterpiece",icon:"\u23F0"},
+  {name:"EarthBound",system:"SNES",base:200,rarity:"Rare",minM:0.5,maxM:3.5,desc:"Fuzzy pickles!",icon:"\u{1F30E}"},
+  {name:"Super Metroid",system:"SNES",base:60,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Atmospheric perfection",icon:"\u{1F47E}"},
+  {name:"Final Fantasy III",system:"SNES",base:50,rarity:"Uncommon",minM:0.5,maxM:3.0,desc:"Actually FF6 in Japan",icon:"\u{1F52E}"},
+  {name:"Mega Man X",system:"SNES",base:30,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Dash and blast",icon:"\u{1F4A5}"},
+  {name:"Hagane",system:"SNES",base:500,rarity:"Very Rare",minM:0.6,maxM:2.5,desc:"Blockbuster exclusive ninja",icon:"\u{1F977}"},
+  // N64
+  {name:"Ocarina of Time",system:"N64",base:30,rarity:"Common",minM:0.3,maxM:2.5,desc:"Perfect 10/10",icon:"\u{1F3B5}"},
+  {name:"Super Mario 64",system:"N64",base:25,rarity:"Common",minM:0.3,maxM:2.0,desc:"Yahoo! Yahoo! Ya-ya-ya-yahoo!",icon:"\u2B50"},
+  {name:"GoldenEye 007",system:"N64",base:20,rarity:"Common",minM:0.3,maxM:2.0,desc:"No Oddjob allowed",icon:"\u{1F52B}"},
+  {name:"Conker's Bad Fur Day",system:"N64",base:80,rarity:"Rare",minM:0.5,maxM:3.0,desc:"M-rated squirrel mayhem",icon:"\u{1F43F}\uFE0F"},
+  {name:"Mario Kart 64",system:"N64",base:25,rarity:"Common",minM:0.3,maxM:2.0,desc:"Blue shell chaos",icon:"\u{1F3CE}\uFE0F"},
+  {name:"Smash Bros.",system:"N64",base:30,rarity:"Common",minM:0.4,maxM:2.5,desc:"The original brawler",icon:"\u{1F44A}"},
+  {name:"Sculptor's Cut (ClayFighter)",system:"N64",base:300,rarity:"Very Rare",minM:0.5,maxM:2.5,desc:"Blockbuster exclusive",icon:"\u{1F3AD}"},
+  // GameCube
+  {name:"Smash Bros. Melee",system:"GameCube",base:50,rarity:"Uncommon",minM:0.4,maxM:3.0,desc:"Tournament favorite forever",icon:"\u{1F3AE}"},
+  {name:"Metroid Prime",system:"GameCube",base:30,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"FPS masterclass",icon:"\u{1FA90}"},
+  {name:"Wind Waker",system:"GameCube",base:40,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Cel-shaded sailing",icon:"\u{1F30A}"},
+  {name:"Eternal Darkness",system:"GameCube",base:70,rarity:"Rare",minM:0.5,maxM:3.0,desc:"Sanity effects scared everyone",icon:"\u{1F631}"},
+  {name:"Pikmin",system:"GameCube",base:25,rarity:"Uncommon",minM:0.4,maxM:2.0,desc:"Tiny army commander",icon:"\u{1F331}"},
+  {name:"Chibi-Robo!",system:"GameCube",base:80,rarity:"Rare",minM:0.5,maxM:2.5,desc:"Tiny robot, big heart",icon:"\u{1F916}"},
+  {name:"Pok\u00e9mon Box",system:"GameCube",base:200,rarity:"Very Rare",minM:0.5,maxM:3.0,desc:"Pokemon Center exclusive",icon:"\u{1F4E6}"},
+  // Atari 2600
+  {name:"Pac-Man",system:"Atari 2600",base:3,rarity:"Common",minM:0.3,maxM:2.0,desc:"Famously bad port",icon:"\u{1F47B}"},
+  {name:"Space Invaders",system:"Atari 2600",base:5,rarity:"Common",minM:0.3,maxM:2.0,desc:"Pew pew pew",icon:"\u{1F47D}"},
+  {name:"Pitfall!",system:"Atari 2600",base:8,rarity:"Common",minM:0.4,maxM:2.5,desc:"Vine swinging adventure",icon:"\u{1F40A}"},
+  {name:"E.T.",system:"Atari 2600",base:5,rarity:"Common",minM:0.2,maxM:3.0,desc:"Landfill legend",icon:"\u{1F47D}"},
+  {name:"Air Raid",system:"Atari 2600",base:3000,rarity:"Grail",minM:0.5,maxM:3.0,desc:"Blue T-handle cart",icon:"\u2708\uFE0F"},
+  {name:"Adventure",system:"Atari 2600",base:8,rarity:"Common",minM:0.3,maxM:2.5,desc:"First Easter egg ever",icon:"\u{1F409}"},
+  // Master System
+  {name:"Phantasy Star",system:"Master System",base:50,rarity:"Rare",minM:0.5,maxM:3.0,desc:"OG JRPG on Sega",icon:"\u2B50"},
+  {name:"Alex Kidd in Miracle World",system:"Master System",base:15,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Sega's first mascot",icon:"\u270A"},
+  {name:"Sonic the Hedgehog",system:"Master System",base:15,rarity:"Uncommon",minM:0.4,maxM:2.0,desc:"8-bit speed",icon:"\u{1F994}"},
+  {name:"Ys: The Vanished Omens",system:"Master System",base:60,rarity:"Rare",minM:0.5,maxM:2.5,desc:"Action RPG classic",icon:"\u{1F4D6}"},
+  // Genesis
+  {name:"Sonic the Hedgehog",system:"Genesis",base:10,rarity:"Common",minM:0.3,maxM:2.0,desc:"Gotta go fast",icon:"\u{1F994}"},
+  {name:"Sonic the Hedgehog 2",system:"Genesis",base:8,rarity:"Common",minM:0.3,maxM:2.0,desc:"Tails joins the race",icon:"\u{1F98A}"},
+  {name:"Streets of Rage 2",system:"Genesis",base:25,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Beat 'em up perfection",icon:"\u{1F44A}"},
+  {name:"Phantasy Star IV",system:"Genesis",base:80,rarity:"Rare",minM:0.5,maxM:3.0,desc:"JRPG masterpiece",icon:"\u{1F30C}"},
+  {name:"MUSHA",system:"Genesis",base:200,rarity:"Very Rare",minM:0.5,maxM:3.0,desc:"Mecha shmup madness",icon:"\u{1F681}"},
+  {name:"Mortal Kombat",system:"Genesis",base:10,rarity:"Common",minM:0.3,maxM:2.5,desc:"ABACABB for blood",icon:"\u{1F480}"},
+  // Saturn
+  {name:"Panzer Dragoon Saga",system:"Saturn",base:800,rarity:"Very Rare",minM:0.5,maxM:3.0,desc:"Under 20K copies in NA",icon:"\u{1F409}"},
+  {name:"Radiant Silvergun",system:"Saturn",base:300,rarity:"Very Rare",minM:0.5,maxM:2.5,desc:"Treasure's shmup opus",icon:"\u{1F52B}"},
+  {name:"Nights Into Dreams",system:"Saturn",base:30,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Flying dream jester",icon:"\u{1F319}"},
+  {name:"Burning Rangers",system:"Saturn",base:150,rarity:"Rare",minM:0.5,maxM:3.0,desc:"Late-era Sonic Team",icon:"\u{1F525}"},
+  // Dreamcast
+  {name:"Sonic Adventure",system:"Dreamcast",base:20,rarity:"Common",minM:0.3,maxM:2.0,desc:"Open your heart",icon:"\u{1F994}"},
+  {name:"Shenmue",system:"Dreamcast",base:25,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Do you know sailors?",icon:"\u{1F3EE}"},
+  {name:"Jet Set Radio",system:"Dreamcast",base:30,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Graffiti and grooves",icon:"\u{1F6F9}"},
+  {name:"Power Stone 2",system:"Dreamcast",base:60,rarity:"Rare",minM:0.5,maxM:3.0,desc:"4-player arena chaos",icon:"\u{1F48E}"},
+  {name:"Skies of Arcadia",system:"Dreamcast",base:80,rarity:"Rare",minM:0.5,maxM:3.0,desc:"Sky pirate RPG",icon:"\u2601\uFE0F"},
+  {name:"Ikaruga",system:"Dreamcast",base:100,rarity:"Rare",minM:0.5,maxM:2.5,desc:"Polarity shmup perfection",icon:"\u26AB"},
+  // PS1
+  {name:"Final Fantasy VII",system:"PS1",base:30,rarity:"Common",minM:0.3,maxM:3.0,desc:"Cloud's big adventure",icon:"\u2694\uFE0F"},
+  {name:"Metal Gear Solid",system:"PS1",base:15,rarity:"Common",minM:0.3,maxM:2.5,desc:"Tactical espionage action",icon:"\u{1F4E6}"},
+  {name:"Castlevania: SotN",system:"PS1",base:60,rarity:"Uncommon",minM:0.4,maxM:3.0,desc:"What is a man?",icon:"\u{1F987}"},
+  {name:"Resident Evil 2",system:"PS1",base:30,rarity:"Common",minM:0.4,maxM:2.5,desc:"Survival horror perfected",icon:"\u{1F9DF}"},
+  {name:"Crash Bandicoot",system:"PS1",base:12,rarity:"Common",minM:0.3,maxM:2.0,desc:"Woah!",icon:"\u{1F300}"},
+  {name:"Suikoden II",system:"PS1",base:200,rarity:"Very Rare",minM:0.5,maxM:3.5,desc:"108 Stars of Destiny",icon:"\u{1F31F}"},
+  {name:"Persona 2",system:"PS1",base:150,rarity:"Rare",minM:0.5,maxM:3.0,desc:"Rumors become reality",icon:"\u{1F3AD}"},
+  {name:"Tomba!",system:"PS1",base:100,rarity:"Rare",minM:0.5,maxM:2.5,desc:"Pink-haired pig hunter",icon:"\u{1F437}"},
+  // PS2
+  {name:"GTA: San Andreas",system:"PS2",base:8,rarity:"Common",minM:0.3,maxM:2.0,desc:"All you had to do...",icon:"\u{1F697}"},
+  {name:"Shadow of the Colossus",system:"PS2",base:15,rarity:"Common",minM:0.4,maxM:2.5,desc:"16 giants must fall",icon:"\u{1F5FF}"},
+  {name:"Kingdom Hearts",system:"PS2",base:10,rarity:"Common",minM:0.3,maxM:2.0,desc:"Disney meets Final Fantasy",icon:"\u{1F5DD}\uFE0F"},
+  {name:"Rule of Rose",system:"PS2",base:300,rarity:"Very Rare",minM:0.5,maxM:3.5,desc:"Controversial survival horror",icon:"\u{1F339}"},
+  {name:".hack Part 4",system:"PS2",base:120,rarity:"Rare",minM:0.5,maxM:3.0,desc:"MMO inside a game",icon:"\u{1F4BB}"},
+  {name:"God of War",system:"PS2",base:8,rarity:"Common",minM:0.3,maxM:2.0,desc:"Kratos begins",icon:"\u26A1"},
+  // PS3
+  {name:"The Last of Us",system:"PS3",base:10,rarity:"Common",minM:0.3,maxM:2.0,desc:"Ellie and Joel",icon:"\u{1F344}"},
+  {name:"Demon's Souls",system:"PS3",base:20,rarity:"Uncommon",minM:0.4,maxM:3.0,desc:"The Souls genre begins",icon:"\u{1F525}"},
+  {name:"Folklore",system:"PS3",base:40,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Underrated gem",icon:"\u{1F9DA}"},
+  {name:"Afrika",system:"PS3",base:80,rarity:"Rare",minM:0.5,maxM:2.5,desc:"Safari photo sim",icon:"\u{1F981}"},
+  // PS4
+  {name:"Bloodborne",system:"PS4",base:15,rarity:"Common",minM:0.3,maxM:2.5,desc:"Fear the old blood",icon:"\u{1FA78}"},
+  {name:"Persona 5",system:"PS4",base:15,rarity:"Common",minM:0.3,maxM:2.0,desc:"Looking cool, Joker!",icon:"\u{1F3AD}"},
+  {name:"Gravity Rush Remastered",system:"PS4",base:80,rarity:"Rare",minM:0.5,maxM:3.0,desc:"Falling with style",icon:"\u{1F300}"},
+  // PS5
+  {name:"Demon's Souls Remake",system:"PS5",base:30,rarity:"Common",minM:0.4,maxM:2.0,desc:"Umbasa",icon:"\u2694\uFE0F"},
+  {name:"Returnal",system:"PS5",base:25,rarity:"Common",minM:0.4,maxM:2.0,desc:"Roguelike perfection",icon:"\u{1F504}"},
+  // Xbox
+  {name:"Halo: Combat Evolved",system:"Xbox",base:10,rarity:"Common",minM:0.3,maxM:2.0,desc:"Finish the fight (start)",icon:"\u{1F52B}"},
+  {name:"KOTOR",system:"Xbox",base:15,rarity:"Common",minM:0.4,maxM:2.5,desc:"Best Star Wars game ever",icon:"\u2B50"},
+  {name:"Fable",system:"Xbox",base:10,rarity:"Common",minM:0.3,maxM:2.0,desc:"Hero or villain",icon:"\u{1F414}"},
+  {name:"Jade Empire",system:"Xbox",base:15,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"BioWare kung fu",icon:"\u{1F409}"},
+  {name:"Steel Battalion",system:"Xbox",base:300,rarity:"Very Rare",minM:0.5,maxM:2.5,desc:"Giant controller included",icon:"\u{1F916}"},
+  // Xbox 360
+  {name:"Halo 3",system:"Xbox 360",base:5,rarity:"Common",minM:0.3,maxM:2.0,desc:"Finish the fight (for real)",icon:"\u{1F52B}"},
+  {name:"Red Dead Redemption",system:"Xbox 360",base:10,rarity:"Common",minM:0.3,maxM:2.0,desc:"Cowboy simulator",icon:"\u{1F920}"},
+  {name:"Mass Effect",system:"Xbox 360",base:5,rarity:"Common",minM:0.3,maxM:2.5,desc:"I'm Commander Shepard",icon:"\u{1F680}"},
+  // Xbox One
+  {name:"Rare Replay",system:"Xbox One",base:10,rarity:"Common",minM:0.3,maxM:2.0,desc:"30 classics in one",icon:"\u{1F3AE}"},
+  {name:"Sunset Overdrive",system:"Xbox One",base:8,rarity:"Common",minM:0.3,maxM:2.5,desc:"Punk rock apocalypse",icon:"\u{1F34A}"},
+  // Virtual Boy
+  {name:"Wario Land VB",system:"Virtual Boy",base:40,rarity:"Rare",minM:0.5,maxM:3.0,desc:"Best VB game by far",icon:"\u{1F7E5}"},
+  {name:"Jack Bros.",system:"Virtual Boy",base:150,rarity:"Very Rare",minM:0.5,maxM:3.5,desc:"First SMT in NA",icon:"\u{1F608}"},
+  {name:"Bound High",system:"Virtual Boy",base:2000,rarity:"Grail",minM:0.5,maxM:3.0,desc:"Unreleased prototype",icon:"\u2B06\uFE0F"},
+  // Vectrex
+  {name:"Mine Storm",system:"Vectrex",base:20,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Built-in classic",icon:"\u{1F4A3}"},
+  {name:"Scramble",system:"Vectrex",base:40,rarity:"Rare",minM:0.5,maxM:3.0,desc:"Vector arcade action",icon:"\u2708\uFE0F"},
+  {name:"Mr. Boston Clean Sweep",system:"Vectrex",base:500,rarity:"Very Rare",minM:0.5,maxM:3.0,desc:"Liquor company promo",icon:"\u{1F9F9}"},
+  // Intellivision
+  {name:"Astrosmash",system:"Intellivision",base:5,rarity:"Common",minM:0.3,maxM:2.0,desc:"Space shooter classic",icon:"\u2604\uFE0F"},
+  {name:"Utopia",system:"Intellivision",base:8,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"First sim game ever",icon:"\u{1F3DD}\uFE0F"},
+  {name:"Spiker! Super Pro Volleyball",system:"Intellivision",base:200,rarity:"Very Rare",minM:0.5,maxM:3.0,desc:"Super rare sports title",icon:"\u{1F3D0}"},
+  // ColecoVision
+  {name:"Donkey Kong",system:"ColecoVision",base:10,rarity:"Common",minM:0.3,maxM:2.0,desc:"Best home port of its era",icon:"\u{1F98D}"},
+  {name:"Lady Bug",system:"ColecoVision",base:8,rarity:"Common",minM:0.3,maxM:2.0,desc:"Maze chase charm",icon:"\u{1F41E}"},
+  {name:"Zaxxon",system:"ColecoVision",base:10,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Isometric shooter",icon:"\u{1F6E9}\uFE0F"},
+  // TurboGrafx-16
+  {name:"Bonk's Adventure",system:"TurboGrafx-16",base:40,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Headbutt everything",icon:"\u{1F9B4}"},
+  {name:"Ys Book I & II",system:"TurboGrafx-16",base:60,rarity:"Rare",minM:0.5,maxM:3.0,desc:"CD-ROM RPG greatness",icon:"\u{1F4D6}"},
+  {name:"Magical Chase",system:"TurboGrafx-16",base:1500,rarity:"Grail",minM:0.5,maxM:3.0,desc:"Cute shmup, mega rare",icon:"\u{1F9D9}"},
+  // Neo Geo
+  {name:"Fatal Fury",system:"Neo Geo",base:80,rarity:"Rare",minM:0.5,maxM:2.5,desc:"SNK's flagship fighter",icon:"\u{1F44A}"},
+  {name:"Samurai Shodown",system:"Neo Geo",base:100,rarity:"Rare",minM:0.5,maxM:2.5,desc:"Weapon-based fighting",icon:"\u2694\uFE0F"},
+  {name:"Kizuna Encounter",system:"Neo Geo",base:3000,rarity:"Grail",minM:0.5,maxM:3.5,desc:"Most valuable Neo Geo game",icon:"\u{1F3C6}"},
+  // 3DO
+  {name:"Gex",system:"3DO",base:15,rarity:"Uncommon",minM:0.4,maxM:2.0,desc:"It's tail time!",icon:"\u{1F98E}"},
+  {name:"Road Rash",system:"3DO",base:15,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Motorcycle combat",icon:"\u{1F3CD}\uFE0F"},
+  {name:"The Need for Speed",system:"3DO",base:15,rarity:"Uncommon",minM:0.4,maxM:2.0,desc:"Where it all started",icon:"\u{1F3CE}\uFE0F"},
+  // Jaguar
+  {name:"Tempest 2000",system:"Jaguar",base:40,rarity:"Rare",minM:0.5,maxM:3.0,desc:"The Jag's best game",icon:"\u{1F300}"},
+  {name:"Alien vs Predator",system:"Jaguar",base:50,rarity:"Rare",minM:0.5,maxM:2.5,desc:"Best exclusive on Jag",icon:"\u{1F47D}"},
+  {name:"Battlesphere",system:"Jaguar",base:500,rarity:"Very Rare",minM:0.5,maxM:3.0,desc:"Limited late release",icon:"\u{1F52E}"},
+  // Game Boy
+  {name:"Pok\u00e9mon Red",system:"Game Boy",base:25,rarity:"Common",minM:0.3,maxM:2.5,desc:"Gotta catch 'em all",icon:"\u{1F534}"},
+  {name:"Pok\u00e9mon Blue",system:"Game Boy",base:25,rarity:"Common",minM:0.3,maxM:2.5,desc:"Gotta catch 'em all",icon:"\u{1F535}"},
+  {name:"Tetris",system:"Game Boy",base:8,rarity:"Common",minM:0.3,maxM:2.0,desc:"The ultimate puzzle",icon:"\u{1F9F1}"},
+  {name:"Link's Awakening",system:"Game Boy",base:20,rarity:"Common",minM:0.4,maxM:2.5,desc:"Best handheld Zelda",icon:"\u{1F334}"},
+  // GBA
+  {name:"Pok\u00e9mon Ruby",system:"GBA",base:25,rarity:"Common",minM:0.3,maxM:2.5,desc:"Hoenn confirmed",icon:"\u2764\uFE0F"},
+  {name:"Metroid Fusion",system:"GBA",base:30,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"SA-X is terrifying",icon:"\u{1F9EC}"},
+  {name:"Advance Wars",system:"GBA",base:30,rarity:"Uncommon",minM:0.4,maxM:3.0,desc:"Turn-based tactics perfection",icon:"\u{1FA96}"},
+  {name:"Fire Emblem",system:"GBA",base:40,rarity:"Uncommon",minM:0.4,maxM:3.0,desc:"Western FE debut",icon:"\u{1F525}"},
+  // DS
+  {name:"Pok\u00e9mon HeartGold",system:"DS",base:60,rarity:"Uncommon",minM:0.4,maxM:3.0,desc:"Pokewalker included",icon:"\u{1F49B}"},
+  {name:"Castlevania: Dawn of Sorrow",system:"DS",base:30,rarity:"Uncommon",minM:0.4,maxM:2.5,desc:"Touch screen soul capture",icon:"\u{1F987}"},
+  {name:"Dragon Quest V",system:"DS",base:80,rarity:"Rare",minM:0.5,maxM:3.0,desc:"Hard to find RPG",icon:"\u{1F409}"},
+];
+
+const VENUES = [
+  {name:"eBay Listings",level:1,desc:"Selling from your bedroom. eBay takes a cut but the whole world can buy.",slots:30,buyDisc:0.8,sellPrem:1.0,fee:3,numGames:10,minRar:"Common",maxRar:"Uncommon",eventChance:0.20,unlockCost:0,icon:"\u{1F4BB}"},
+  {name:"Yard Sales",level:2,desc:"Waking up at 5am on Saturdays. People don't know what they have.",slots:50,buyDisc:0.3,sellPrem:1.05,fee:0,numGames:8,minRar:"Common",maxRar:"Rare",eventChance:0.25,unlockCost:300,icon:"\u{1F3E0}"},
+  {name:"Flea Market",level:3,desc:"Every Saturday you rent a table. Regulars start to know your name.",slots:100,buyDisc:0.5,sellPrem:1.15,fee:15,numGames:12,minRar:"Common",maxRar:"Rare",eventChance:0.25,unlockCost:1500,icon:"\u{1F3EA}"},
+  {name:"Small Convention",level:4,desc:"Regional retro gaming cons. Serious collectors and rare finds.",slots:200,buyDisc:0.65,sellPrem:1.35,fee:50,numGames:16,minRar:"Common",maxRar:"Very Rare",eventChance:0.30,unlockCost:5000,icon:"\u{1F3AA}"},
+  {name:"Big Convention",level:5,desc:"PAX, TooManyGames, Portland Retro Gaming Expo. Whales and grails.",slots:350,buyDisc:0.75,sellPrem:1.60,fee:150,numGames:20,minRar:"Uncommon",maxRar:"Grail",eventChance:0.35,unlockCost:15000,icon:"\u{1F3AF}"},
+  {name:"Retro Game Store",level:6,desc:"You did it. Your own store. Rent is brutal but the dream is real.",slots:500,buyDisc:0.60,sellPrem:1.80,fee:400,numGames:24,minRar:"Common",maxRar:"Grail",eventChance:0.35,unlockCost:40000,icon:"\u{1F3EC}"},
+];
+
+const EVENTS = [
+  // Price spikes
+  {name:"YouTuber Hype",desc:"A famous YouTuber just featured {game}! Prices SKYROCKETING!",type:"price_spike",prob:0.10,minLevel:1,icon:"\u{1F4F9}"},
+  {name:"Retro Revival",desc:"New documentary about {system} dropped. Everyone wants {system} games!",type:"price_spike",prob:0.08,minLevel:1,icon:"\u{1F3AC}"},
+  {name:"Speedrun Record",desc:"World record broken in {game}! Demand through the roof!",type:"price_spike",prob:0.07,minLevel:1,icon:"\u23F1\uFE0F"},
+  {name:"Remaster Announced",desc:"{game} remaster announced! Original copies SPIKING!",type:"price_spike",prob:0.08,minLevel:1,icon:"\u{1F4E2}"},
+  {name:"Grading Frenzy",desc:"Wata graded a {game} at 9.8! Similar copies going nuts!",type:"price_spike",prob:0.05,minLevel:3,icon:"\u{1F3C5}"},
+  {name:"TikTok Trend",desc:"{game} went viral on TikTok! Gen Z is buying up all copies!",type:"price_spike",prob:0.09,minLevel:1,icon:"\u{1F4F1}"},
+  {name:"Celebrity Collector",desc:"A celeb just posted their {system} collection. Prices surging!",type:"price_spike",prob:0.06,minLevel:1,icon:"\u2B50"},
+  {name:"Holiday Rush",desc:"Holiday season demand! All game prices up across the board!",type:"price_spike",prob:0.05,minLevel:1,icon:"\u{1F384}"},
+  {name:"Auction Record",desc:"A sealed {game} just sold at auction for 10x market! Hype is real!",type:"price_spike",prob:0.04,minLevel:2,icon:"\u{1F528}"},
+  // Price crashes
+  {name:"Repro Flood",desc:"Chinese repro carts of {game} flooding eBay. Prices TANKING!",type:"price_crash",prob:0.08,minLevel:1,icon:"\u{1F4C9}"},
+  {name:"Digital Re-release",desc:"{game} dropped on Switch Online. Physical prices PLUMMETING!",type:"price_crash",prob:0.08,minLevel:1,icon:"\u2B07\uFE0F"},
+  {name:"Market Correction",desc:"Retro bubble deflating. {system} prices down across the board!",type:"price_crash",prob:0.06,minLevel:1,icon:"\u{1F4A8}"},
+  {name:"Fake Scandal",desc:"Huge batch of fake {game} carts discovered. Market trust SHAKEN!",type:"price_crash",prob:0.05,minLevel:2,icon:"\u{1F6A8}"},
+  {name:"Warehouse Find",desc:"A warehouse full of {system} games was just discovered! Prices dropping!",type:"price_crash",prob:0.06,minLevel:1,icon:"\u{1F3ED}"},
+  {name:"Bubble Pop",desc:"Gaming influencer says retro is dead. Panic selling {system}!",type:"price_crash",prob:0.05,minLevel:1,icon:"\u{1F4A5}"},
+  {name:"Emulation News",desc:"New perfect emulator for {system} released. Who needs carts?",type:"price_crash",prob:0.06,minLevel:1,icon:"\u{1F4BB}"},
+  // Finds
+  {name:"Garage Sale Jackpot",desc:"Box of {system} games at a garage sale! You grab a {game}!",type:"find",prob:0.10,minLevel:1,icon:"\u{1F381}"},
+  {name:"Estate Sale Gold",desc:"Old gamer's estate sale had {game} buried in a closet!",type:"find",prob:0.08,minLevel:1,icon:"\u{1F3E0}"},
+  {name:"Storage Unit Win",desc:"Won a storage unit auction and found {game} inside!",type:"find",prob:0.05,minLevel:2,icon:"\u{1F4E6}"},
+  {name:"Dumpster Dive",desc:"Someone threw out a box behind GameStop. You rescued a {game}!",type:"find",prob:0.07,minLevel:1,icon:"\u{1F5D1}\uFE0F"},
+  {name:"Thrift Store Score",desc:"Goodwill had {game} on the shelf for $1! It's yours!",type:"find",prob:0.09,minLevel:1,icon:"\u{1F6D2}"},
+  {name:"Friend's Attic",desc:"Your buddy found {game} in their parents' attic. Free to you!",type:"find",prob:0.06,minLevel:1,icon:"\u{1F3DA}\uFE0F"},
+  {name:"Pawn Shop Gem",desc:"Pawn shop didn't know what they had. You grabbed {game}!",type:"find",prob:0.07,minLevel:1,icon:"\u{1F48E}"},
+  // Cash bonus
+  {name:"Online Sale",desc:"Someone bought from your eBay store overnight! +${amount} cash!",type:"cash_bonus",prob:0.12,minLevel:1,icon:"\u{1F4B0}"},
+  {name:"Tip Jar",desc:"A happy customer threw in a tip! +${amount}!",type:"cash_bonus",prob:0.08,minLevel:2,icon:"\u{1FAD9}"},
+  {name:"Return Customer",desc:"A loyal customer just placed a big order! +${amount}!",type:"cash_bonus",prob:0.07,minLevel:2,icon:"\u{1F501}"},
+  {name:"Tax Refund",desc:"Your tax refund just hit! +${amount}!",type:"cash_bonus",prob:0.04,minLevel:1,icon:"\u{1F3DB}\uFE0F"},
+  {name:"Side Hustle",desc:"You fixed someone's console for cash! +${amount}!",type:"cash_bonus",prob:0.08,minLevel:1,icon:"\u{1F527}"},
+  // Losses
+  {name:"Got Scammed",desc:"That 'mint' {game} was a reproduction. -${amount}!",type:"loss",prob:0.07,minLevel:1,icon:"\u{1F624}"},
+  {name:"Shipping Damage",desc:"USPS crushed a package with {game}. Insurance won't cover it.",type:"loss",prob:0.06,minLevel:1,icon:"\u{1F4EE}"},
+  {name:"Theft",desc:"Someone swiped {game} from your table!",type:"loss",prob:0.04,minLevel:3,icon:"\u{1F9B9}"},
+  {name:"eBay Refund",desc:"Buyer opened a false 'not as described' case. -${amount}!",type:"loss",prob:0.07,minLevel:1,icon:"\u{1F4B8}"},
+  {name:"Car Trouble",desc:"Your car broke down on the way to sell. -${amount} for repairs!",type:"loss",prob:0.05,minLevel:2,icon:"\u{1F697}"},
+  {name:"IRS Audit",desc:"The IRS noticed your income. Pay ${amount} in back taxes!",type:"loss",prob:0.03,minLevel:3,icon:"\u{1F3DB}\uFE0F"},
+  {name:"Water Damage",desc:"A pipe burst and damaged some inventory! Lost a {game}!",type:"loss",prob:0.04,minLevel:2,icon:"\u{1F4A7}"},
+  // Opportunities
+  {name:"Bulk Deal",desc:"A collector is liquidating! Buy {count} random {system} games at 40% off?",type:"opportunity",prob:0.09,minLevel:1,icon:"\u{1F4E6}"},
+  {name:"Trade Offer",desc:"A dealer wants to trade their {game1} for your {game2}. Deal?",type:"opportunity",prob:0.10,minLevel:2,icon:"\u{1F91D}"},
+  {name:"Celebrity Visit",desc:"A famous streamer visited your booth! Reputation skyrockets!",type:"opportunity",prob:0.04,minLevel:4,icon:"\u{1F31F}"},
+  {name:"Convention Invite",desc:"Invited to a premium spot! Extra sales this turn!",type:"opportunity",prob:0.06,minLevel:3,icon:"\u{1F3AB}"},
+  {name:"Wholesale Connect",desc:"A supplier offers you wholesale pricing this turn! 30% off everything!",type:"opportunity",prob:0.05,minLevel:3,icon:"\u{1F3F7}\uFE0F"},
+  {name:"Mystery Box",desc:"Someone offers a sealed mystery box for ${amount}. Could be gold or garbage!",type:"opportunity",prob:0.08,minLevel:1,icon:"\u{1F3B2}"},
+  // Encounters
+  {name:"Scalper Showdown",desc:"A scalper is buying up all the {system} games before you!",type:"encounter",prob:0.07,minLevel:2,icon:"\u{1F988}"},
+  {name:"Haggler",desc:"Customer offers ${amount} for your {game} (worth ${value}). Take it?",type:"encounter",prob:0.12,minLevel:1,icon:"\u{1F911}"},
+  {name:"Karen Encounter",desc:"An angry customer demands a refund on {game} they 'didn't like'!",type:"encounter",prob:0.08,minLevel:2,icon:"\u{1F621}"},
+  {name:"Newbie Collector",desc:"A new collector asks your advice. Help them? (+rep)",type:"encounter",prob:0.10,minLevel:1,icon:"\u{1F423}"},
+  {name:"Rival Dealer",desc:"A rival dealer is trash-talking your booth to customers!",type:"encounter",prob:0.06,minLevel:3,icon:"\u{1F620}"},
+  {name:"Kid's Birthday",desc:"A kid wants {game} for their birthday but can't afford it.",type:"encounter",prob:0.07,minLevel:2,icon:"\u{1F382}"},
+];
+
+const NEWS_TICKER = [
+  "Nintendo files another lawsuit against ROM sites...",
+  "Retro game prices continue to climb in Q4 report",
+  "New study: 73% of sealed games are investment purchases",
+  "Local GameStop closing down. Parking lot sale this weekend",
+  "Someone found a prototype NES cart at a flea market",
+  "Wata Games under investigation for price manipulation",
+  "Heritage Auctions reports record retro game sales",
+  "A sealed copy of Super Mario Bros sold for $2M at auction",
+  "Reddit: 'Is now a good time to start collecting retro games?'",
+  "eBay increases seller fees again. Resellers not happy.",
+  "New FPGA console clone announced, retro purists divided",
+  "Your mom asks why you have 'so many old Nintendo things'",
+  "Local news does a story on retro game collecting",
+  "Goodwill starts pricing retro games at eBay prices. Boo.",
+  "Game Sack uploaded a new episode about hidden gems",
+  "Someone paid $50k for a CIB Virtual Boy. Wild times.",
+  "Your uncle asks when you're paying him back...",
+  "Facebook Marketplace full of '$500 OBO' Wii Sports listings",
+  "A kid asks you if your NES games work on a Switch",
+  "You see your competitor selling fakes and shaking your head",
+  "Metal Jesus just posted a new hidden gems video",
+  "Pricecharting.com showing prices trending up",
+  "A sealed game you sold last week just resold for 3x. Ouch.",
+  "Your storage unit is getting full. Might need another one.",
+  "Retro game convention announced for next month!",
+  "Someone tried to return a game they clearly played for 40hrs",
+  "The AVGN just reviewed a game. Sales incoming!",
+  "You stayed up until 2am watching auction snipes on eBay",
+  "A customer tells you their grandma has 'a bunch of old games'",
+  "Inflation report: everything costs more. Retro games too.",
+  "New CRT TV shortage. Retro gaming setups getting pricier.",
+  "You dream about finding Stadium Events at a yard sale",
+  "Another 'game store tour' video blew up on YouTube",
+  "Someone on Twitter argues about whether CIB means the foam too",
+];
+
+const GAME_PRESETS = {
+  25:{name:"Quick Game",cash:800,debt:100,unlockScale:0.30,eventMinTurn:1,eventRateMult:1.5,debtGameover:15000},
+  50:{name:"Standard Game",cash:650,debt:200,unlockScale:0.55,eventMinTurn:2,eventRateMult:1.25,debtGameover:30000},
+  100:{name:"Marathon",cash:500,debt:300,unlockScale:1.0,eventMinTurn:3,eventRateMult:1.0,debtGameover:50000},
+};
+
+const VOLATILITY = {Common:0.55,Uncommon:0.60,Rare:0.65,"Very Rare":0.70,Grail:0.75};
+const RARITY_SHORT = {Common:{l:"C",c:"rarity-C"},Uncommon:{l:"U",c:"rarity-U"},Rare:{l:"R",c:"rarity-R"},"Very Rare":{l:"V",c:"rarity-V"},Grail:{l:"G",c:"rarity-G"}};
+const COND_SHORT = {Loose:"L",CIB:"CIB",Sealed:"New",Graded:"Grd"};
+const SYS_SHORT = {"Atari 2600":"Atari","Master System":"SMS",Genesis:"Gen",GameCube:"GCN","Game Boy":"GB","Xbox 360":"X360","Xbox One":"XOne","Virtual Boy":"VBoy",Intellivision:"INTV",ColecoVision:"Coleco","TurboGrafx-16":"TG16","Neo Geo":"NeoGeo",Jaguar:"Jag",Dreamcast:"DC",Saturn:"Saturn",Vectrex:"Vectrex"};
+
+const UPGRADES = {
+  storage_unit:{name:"Storage Unit",desc:"+50 inventory slots",cost:500,effect:"storagebonus",value:50,maxBuy:5,minLevel:2,icon:"\u{1F4E6}"},
+  auth_kit:{name:"Authentication Kit",desc:"Detect fakes - avoid scam events",cost:300,effect:"authkit",value:true,maxBuy:1,minLevel:2,icon:"\u{1F50D}"},
+  display_cases:{name:"Display Cases",desc:"+10% sell prices at conventions",cost:800,effect:"displaycases",value:true,maxBuy:1,minLevel:3,icon:"\u{1F5C4}\uFE0F"},
+  grading_sub:{name:"Grading Service Sub",desc:"Access to graded games + better sell prices",cost:2000,effect:"gradingsub",value:true,maxBuy:1,minLevel:4,icon:"\u{1F3C5}"},
+};
+
+const RATINGS = [
+  [0,"Garage Sale Gopher","You couldn't sell ice cream in the desert."],
+  [1000,"eBay Dabbler","At least you tried. Your eBay feedback: 'Item was okay I guess.'"],
+  [5000,"Flea Market Flipper","You've got the hustle. Keep grinding those weekend sales."],
+  [15000,"Convention Regular","People recognize your booth. You're building a reputation."],
+  [50000,"Retro Mogul","Your collection is legendary. Other dealers envy your finds."],
+  [100000,"Game Store Legend","You own the premier retro game store in town. Living the dream!"],
+  [250000,"Retro Empire","You're the GameStop of retro gaming. Multiple locations, online presence, the works."],
+  [500000,"Hall of Fame","Your name is spoken in hushed tones at conventions worldwide."],
+  [1000000,"Game Wars Champion","You've achieved what every collector dreams of. A million-dollar empire built on pixels and nostalgia."],
+];
+
+// =============================================================================
+// GAME STATE
+// =============================================================================
+
+let G = null; // Game state
+
+function newGame(turns,name) {
+  const p = GAME_PRESETS[turns] || GAME_PRESETS[100];
+  G = {
+    name: name,
+    cash: p.cash,
+    debt: p.debt,
+    bank: 0,
+    reputation: 50,
+    venueLevel: 1,
+    inventory: [],
+    turn: 1,
+    maxTurns: turns,
+    totalProfit: 0,
+    gamesSold: 0,
+    gamesBought: 0,
+    bestFlip: 0,
+    bestFlipGame: "",
+    unlockedVenues: [1],
+    storageBonus: 0,
+    hasAuthKit: false,
+    hasDisplayCases: false,
+    hasGradingSub: false,
+    market: [],
+    priceModifiers: {},
+    activeEvents: [],
+    gameOver: false,
+    gameOverReason: "",
+    preset: p,
+    storagePurchases: 0,
+  };
+}
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+
+function $(id){return document.getElementById(id)}
+function rand(a,b){return Math.random()*(b-a)+a}
+function randInt(a,b){return Math.floor(rand(a,b+1))}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function sample(arr,n){let s=[...arr];for(let i=s.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[s[i],s[j]]=[s[j],s[i]]}return s.slice(0,n)}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
+function fmt(v){return "$"+(v<0?"-":"")+Math.abs(v).toLocaleString()}
+function sysShort(s){return SYS_SHORT[s]||s.substring(0,5)}
+function shortName(n,max=22){return n.length>max?n.substring(0,max-1)+".":n}
+
+function getVenue(level){return VENUES.find(v=>v.level===level)||VENUES[0]}
+function getGamesByRarity(minR,maxR){
+  const mi=RARITY_ORDER.indexOf(minR),ma=RARITY_ORDER.indexOf(maxR);
+  const valid=new Set(RARITY_ORDER.slice(mi,ma+1));
+  return GAME_CATALOG.filter(g=>valid.has(g.rarity));
+}
+function getAllSystems(){return [...new Set(GAME_CATALOG.map(g=>g.system))].sort()}
+function getGamesBySystem(sys){return GAME_CATALOG.filter(g=>g.system===sys)}
+
+function netWorth(){
+  const invVal = G.inventory.reduce((s,e)=>s+Math.floor(e.game.base*CONDITION_MULT[e.condition]*e.qty),0);
+  return G.cash + G.bank + invVal - G.debt;
+}
+function invCount(){return G.inventory.reduce((s,e)=>s+e.qty,0)}
+function maxInv(){return getVenue(G.venueLevel).slots + G.storageBonus}
+function invSpace(){return maxInv()-invCount()}
+
+function dealQuality(price,cond,basePrice){
+  const book=Math.floor(basePrice*CONDITION_MULT[cond]);
+  if(price<=book*0.5)return["STEAL","deal-STEAL"];
+  if(price<=book*0.75)return["Good","deal-Good"];
+  if(price<=book*1.1)return["Fair","deal-Fair"];
+  if(price<=book*1.5)return["High","deal-High"];
+  return["RIP","deal-RIP"];
+}
+
+// =============================================================================
+// MARKET ENGINE
+// =============================================================================
+
+function randomCondition(venue){
+  const r=Math.random();
+  if(venue.level<=2){
+    if(r<0.65)return"Loose";if(r<0.90)return"CIB";if(r<0.98)return"Sealed";return"Graded";
+  }else if(venue.level<=4){
+    if(r<0.40)return"Loose";if(r<0.80)return"CIB";if(r<0.95)return"Sealed";return"Graded";
+  }else{
+    if(r<0.25)return"Loose";if(r<0.60)return"CIB";if(r<0.85)return"Sealed";return"Graded";
+  }
+}
+
+function calcBuyPrice(game,cond,venue,turn){
+  let base=game.base*CONDITION_MULT[cond];
+  base*=venue.buyDisc;
+  const vol=VOLATILITY[game.rarity];
+  base*=rand(1-vol,1+vol);
+  const gk=game.name+"|"+game.system;
+  if(G.priceModifiers[gk])base*=G.priceModifiers[gk];
+  else if(G.priceModifiers[game.system])base*=G.priceModifiers[game.system];
+  base*=(1+turn/500);
+  return Math.max(1,Math.floor(base));
+}
+
+function calcSellPrice(entry,venue,turn){
+  let base=entry.game.base*CONDITION_MULT[entry.condition];
+  base*=venue.sellPrem;
+  const vol=VOLATILITY[entry.game.rarity]*0.5;
+  base*=rand(1-vol,1+vol);
+  const gk=entry.game.name+"|"+entry.game.system;
+  if(G.priceModifiers[gk])base*=G.priceModifiers[gk];
+  else if(G.priceModifiers[entry.game.system])base*=G.priceModifiers[entry.game.system];
+  // rep bonus
+  base*=(1+(G.reputation-50)/200);
+  // display case bonus at cons
+  if(G.hasDisplayCases&&venue.level>=4)base*=1.1;
+  base*=(1+turn/500);
+  return Math.max(1,Math.floor(base));
+}
+
+function generateMarket(){
+  const venue=getVenue(G.venueLevel);
+  const available=getGamesByRarity(venue.minRar,venue.maxRar);
+  if(!available.length)return[];
+  const n=Math.min(venue.numGames,available.length);
+  const selected=sample(available,n);
+  const listings=[];
+  for(const game of selected){
+    const cond=randomCondition(venue);
+    const price=calcBuyPrice(game,cond,venue,G.turn);
+    let qty=1;
+    if(game.rarity==="Common"&&Math.random()<0.3)qty=randInt(1,3);
+    listings.push({game,condition:cond,price,qty});
+  }
+  listings.sort((a,b)=>a.price-b.price);
+  return listings;
+}
+
+// =============================================================================
+// EVENT ENGINE
+// =============================================================================
+
+function checkEvents(){
+  const triggered=[];
+  const venue=getVenue(G.venueLevel);
+  for(const ev of EVENTS){
+    if(ev.minLevel>G.venueLevel)continue;
+    let prob=ev.prob*venue.eventChance*4*G.preset.eventRateMult;
+    if(ev.type==="loss"&&netWorth()>10000)prob*=1.5;
+    if(ev.type==="encounter"&&netWorth()>5000)prob*=1.3;
+    if(Math.random()<prob){
+      triggered.push(ev);
+      if(triggered.length>=3)break;
+    }
+  }
+  if(!triggered.length&&G.turn>G.preset.eventMinTurn){
+    const eligible=EVENTS.filter(e=>e.minLevel<=G.venueLevel);
+    if(eligible.length)triggered.push(pick(eligible));
+  }
+  return triggered;
+}
+
+function processEvent(ev){
+  const venue=getVenue(G.venueLevel);
+  const avail=getGamesByRarity(venue.minRar,venue.maxRar);
+  const rg=avail.length?pick(avail):pick(GAME_CATALOG);
+  const rs=rg.system;
+  const result={event:ev,message:"",choices:[],autoResolved:true,effects:{}};
+  const fillMsg=(s)=>s.replace(/\{game\}/g,rg.name).replace(/\{system\}/g,rs);
+
+  if(ev.type==="price_spike"){
+    if(Math.random()<0.4){
+      const k=rg.name+"|"+rg.system;G.priceModifiers[k]=rand(2,4);
+    }else{
+      G.priceModifiers[rs]=rand(1.5,2.5);
+    }
+    result.message=fillMsg(ev.desc);result.effects.priceMod=true;
+  }else if(ev.type==="price_crash"){
+    if(Math.random()<0.4){
+      const k=rg.name+"|"+rg.system;G.priceModifiers[k]=rand(0.3,0.6);
+    }else{
+      G.priceModifiers[rs]=rand(0.5,0.7);
+    }
+    result.message=fillMsg(ev.desc);result.effects.priceMod=true;
+  }else if(ev.type==="find"){
+    const cond=Math.random()<0.66?"Loose":"CIB";
+    if(invCount()<maxInv()){
+      G.inventory.push({game:rg,condition:cond,buyPrice:0,qty:1});
+      result.message=fillMsg(ev.desc);result.effects.itemGained=rg.name;
+    }else{
+      result.message="You spotted a "+rg.name+" but your inventory is FULL! It slipped away...";
+    }
+  }else if(ev.type==="cash_bonus"){
+    const amt=randInt(20,Math.min(300,Math.max(50,Math.floor(G.cash/3)+30)));
+    G.cash+=amt;
+    result.message=ev.desc.replace("{amount}",amt.toString());
+    result.effects.cashGained=amt;
+  }else if(ev.type==="loss"){
+    if(ev.name.includes("Scam")){
+      const amt=randInt(20,Math.min(200,Math.max(20,Math.floor(G.cash/4))));
+      G.cash=Math.max(0,G.cash-amt);
+      result.message=fillMsg(ev.desc).replace("{amount}",amt.toString());result.effects.cashLost=amt;
+    }else if(ev.name.includes("Shipping")){
+      if(G.inventory.length){const i=randInt(0,G.inventory.length-1);const lost=G.inventory.splice(i,1)[0];
+        result.message=ev.desc.replace("{game}",lost.game.name);result.effects.itemLost=lost.game.name;
+      }else{result.message="A shipping mixup occurred but nothing was affected.";}
+    }else if(ev.name.includes("Theft")){
+      if(G.inventory.length){const i=randInt(0,G.inventory.length-1);const lost=G.inventory.splice(i,1)[0];
+        result.message=ev.desc.replace("{game}",lost.game.name);result.effects.itemLost=lost.game.name;
+      }else{result.message="A thief scoped out your booth but found nothing to steal.";}
+    }else if(ev.name.includes("IRS")){
+      const amt=randInt(100,Math.min(2000,Math.max(100,Math.floor(netWorth()/5))));
+      G.cash=Math.max(0,G.cash-amt);if(G.cash===0)G.debt+=amt;
+      result.message=ev.desc.replace("{amount}",amt.toString());result.effects.cashLost=amt;
+    }else{
+      const amt=randInt(10,100);G.cash=Math.max(0,G.cash-amt);
+      result.message=fillMsg(ev.desc).replace("{amount}",amt.toString());result.effects.cashLost=amt;
+    }
+  }else if(ev.type==="opportunity"){
+    result.autoResolved=false;
+    if(ev.name.includes("Bulk")){
+      const count=randInt(3,8);const cost=avail.reduce((s,_,idx)=>idx<count?s+Math.floor(pick(avail).base*0.4):s,0)||randInt(50,200);
+      result.message=`A collector is liquidating! Buy ${count} random ${rs} games for ${fmt(cost)}?`;
+      result.choices=["Buy the lot","Pass"];result.effects.bulkDeal={count,cost,system:rs};
+    }else if(ev.name.includes("Trade")){
+      if(G.inventory.length){
+        const pi=pick(G.inventory);const og=pick(avail);const oc=Math.random()<0.5?"Loose":"CIB";
+        result.message=`Another dealer wants to trade their ${og.name} (${og.system}) [${oc}] for your ${pi.game.name} [${pi.condition}]. Deal?`;
+        result.choices=["Accept trade","Decline"];result.effects.trade={giveIdx:G.inventory.indexOf(pi),receiveGame:og,receiveCond:oc};
+      }else{result.message="A dealer wanted to trade but you have nothing to offer.";result.autoResolved=true;}
+    }else if(ev.name.includes("Celebrity")){
+      const rp=randInt(5,15);G.reputation=Math.min(100,G.reputation+rp);
+      result.message=ev.desc;result.effects.repGained=rp;result.autoResolved=true;
+    }else if(ev.name.includes("Convention Invite")){
+      const bonus=randInt(100,500);G.cash+=bonus;
+      result.message=`${ev.desc} You made an extra ${fmt(bonus)} in sales!`;result.effects.cashGained=bonus;result.autoResolved=true;
+    }else if(ev.name.includes("Wholesale")){
+      result.message=ev.desc;result.effects.wholesale=true;result.autoResolved=true;
+      for(const g of sample(avail,Math.min(5,avail.length))){G.priceModifiers[g.name+"|"+g.system]=0.5;}
+    }else if(ev.name.includes("Mystery")){
+      const cost=randInt(30,Math.min(150,Math.max(30,Math.floor(G.cash/3))));
+      result.message=`Someone offers a sealed mystery box for ${fmt(cost)}. Could be gold or garbage!`;
+      result.choices=[`Buy it (${fmt(cost)})`,"Too risky"];result.effects.mysteryBox={cost};
+    }else{result.message=fillMsg(ev.desc);result.autoResolved=true;}
+  }else if(ev.type==="encounter"){
+    result.autoResolved=false;
+    if(ev.name.includes("Scalper")){
+      result.message=ev.desc.replace("{system}",rs);
+      result.choices=["Outbid them (+$50 cost)","Let them have it"];result.effects.scalper={system:rs};
+    }else if(ev.name.includes("Haggler")){
+      if(G.inventory.length){
+        const item=pick(G.inventory);const val=Math.floor(item.game.base*CONDITION_MULT[item.condition]);
+        const offer=Math.floor(val*rand(0.4,0.85));
+        result.message=`A customer offers ${fmt(offer)} for your ${item.game.name} [${item.condition}] (worth ~${fmt(val)}). Take it?`;
+        result.choices=[`Sell for ${fmt(offer)}`,"Decline"];result.effects.haggle={itemIdx:G.inventory.indexOf(item),offer};
+      }else{result.message="A customer wants to buy something but you have nothing to sell!";result.autoResolved=true;}
+    }else if(ev.name.includes("Karen")){
+      if(G.inventory.length){
+        const item=pick(G.inventory);
+        result.message=`A customer is furious about ${item.game.name}! 'This doesn't work! I want a refund!'`;
+        result.choices=["Give refund (-rep, keep customer)","Refuse (-rep, lose customer)","Offer exchange (costs you a game)"];
+        result.effects.karen={itemIdx:G.inventory.indexOf(item)};
+      }else{result.message="An angry customer storms over but realizes they're at the wrong booth.";result.autoResolved=true;}
+    }else if(ev.name.includes("Newbie")){
+      result.message=ev.desc;result.choices=["Help them out (+5 rep)","Too busy, sorry"];result.effects.newbie=true;
+    }else if(ev.name.includes("Rival")){
+      result.message=ev.desc;result.choices=["Confront them (-cash, +rep)","Ignore it (-rep)"];result.effects.rival=true;
+    }else if(ev.name.includes("Birthday")||ev.name.includes("Kid")){
+      if(G.inventory.length){
+        const cheapest=G.inventory.reduce((a,b)=>a.buyPrice<b.buyPrice?a:b);
+        result.message=ev.desc.replace("{game}",cheapest.game.name);
+        result.choices=[`Give them ${cheapest.game.name} (+10 rep)`,"Sorry kid, this is a business"];
+        result.effects.kidBday={itemIdx:G.inventory.indexOf(cheapest)};
+      }else{result.message="A kid wants a game but you have nothing to give.";result.autoResolved=true;}
+    }else{result.message=fillMsg(ev.desc);result.autoResolved=true;}
+  }
+  return result;
+}
+
+function resolveEventChoice(result,choiceIdx){
+  const ef=result.effects;
+  if(ef.bulkDeal){
+    const d=ef.bulkDeal;
+    if(choiceIdx===0){
+      if(G.cash>=d.cost){
+        G.cash-=d.cost;const avail=getGamesByRarity("Common","Rare");
+        let sysGames=avail.filter(g=>g.system===d.system);if(!sysGames.length)sysGames=avail;
+        let added=0;
+        for(let i=0;i<d.count;i++){if(invCount()>=maxInv())break;const g=pick(sysGames);const c=Math.random()<0.66?"Loose":"CIB";
+          G.inventory.push({game:g,condition:c,buyPrice:Math.floor(d.cost/d.count),qty:1});added++;}
+        return `You bought ${added} games for ${fmt(d.cost)}! Time to flip!`;
+      }return `You don't have ${fmt(d.cost)}! Deal falls through.`;
+    }return "You pass on the bulk deal.";
+  }
+  if(ef.trade){
+    if(choiceIdx===0){
+      if(ef.trade.giveIdx>=0&&ef.trade.giveIdx<G.inventory.length){
+        G.inventory.splice(ef.trade.giveIdx,1);
+        G.inventory.push({game:ef.trade.receiveGame,condition:ef.trade.receiveCond,buyPrice:0,qty:1});
+        return `Trade complete! You got ${ef.trade.receiveGame.name} [${ef.trade.receiveCond}]!`;
+      }return "The item was no longer in your inventory.";
+    }return "You decline the trade.";
+  }
+  if(ef.scalper){
+    if(choiceIdx===0){G.cash=Math.max(0,G.cash-50);G.reputation=Math.min(100,G.reputation+2);return "You outbid the scalper! Cost you $50 but you kept your ground. (+2 rep)";}
+    G.reputation=Math.max(0,G.reputation-1);return "You let the scalper clean house. Maybe next time.";
+  }
+  if(ef.haggle){
+    if(choiceIdx===0){
+      if(ef.haggle.itemIdx>=0&&ef.haggle.itemIdx<G.inventory.length){
+        const item=G.inventory.splice(ef.haggle.itemIdx,1)[0];G.cash+=ef.haggle.offer;
+        const profit=ef.haggle.offer-item.buyPrice;G.gamesSold++;G.totalProfit+=profit;
+        if(profit>G.bestFlip){G.bestFlip=profit;G.bestFlipGame=item.game.name;}
+        return `Sold ${item.game.name} for ${fmt(ef.haggle.offer)}! (Profit: ${fmt(profit)})`;
+      }return "The item was already gone!";
+    }return "You decline the lowball offer.";
+  }
+  if(ef.karen){
+    if(choiceIdx===0){
+      const item=G.inventory[ef.karen.itemIdx];
+      const refund=item?item.buyPrice:0;G.cash=Math.max(0,G.cash-refund);G.reputation=Math.max(0,G.reputation-2);
+      return `You gave a ${fmt(refund)} refund. Customer leaves satisfied. (-2 rep)`;
+    }else if(choiceIdx===1){G.reputation=Math.max(0,G.reputation-5);return "You refused the refund. Karen is posting about you on Facebook. (-5 rep)";}
+    else{G.reputation=Math.min(100,G.reputation+1);return "You offered an exchange. Customer leaves happy. (+1 rep)";}
+  }
+  if(ef.newbie){
+    if(choiceIdx===0){G.reputation=Math.min(100,G.reputation+5);return "You spent time helping the new collector. They'll remember you! (+5 rep)";}
+    return "You wave them off. No time for charity.";
+  }
+  if(ef.mysteryBox){
+    if(choiceIdx===0){
+      if(G.cash>=ef.mysteryBox.cost){
+        G.cash-=ef.mysteryBox.cost;const allG=getGamesByRarity("Common","Grail");const g=pick(allG);
+        const r=Math.random();let c;if(r<0.4)c="Loose";else if(r<0.7)c="CIB";else if(r<0.9)c="Sealed";else c="Graded";
+        if(invCount()>=maxInv())return `No room! You wasted ${fmt(ef.mysteryBox.cost)}.`;
+        G.inventory.push({game:g,condition:c,buyPrice:ef.mysteryBox.cost,qty:1});
+        const val=Math.floor(g.base*CONDITION_MULT[c]);
+        return `The box contained: ${g.name} (${c})! Worth ~${fmt(val)}!`;
+      }return `You don't have ${fmt(ef.mysteryBox.cost)}!`;
+    }return "You play it safe. Probably just loose sports games anyway.";
+  }
+  if(ef.rival){
+    if(choiceIdx===0){const cost=randInt(20,80);if(G.cash>=cost){G.cash-=cost;G.reputation=Math.min(100,G.reputation+5);return `You outspent the rival by ${fmt(cost)}, but earned respect. (+5 rep)`;}
+      G.reputation=Math.min(100,G.reputation+2);return "You stood your ground. (+2 rep)";}
+    G.reputation=Math.max(0,G.reputation-3);return "You let your rival dominate. (-3 rep)";
+  }
+  if(ef.kidBday){
+    if(choiceIdx===0){
+      if(ef.kidBday.itemIdx>=0&&ef.kidBday.itemIdx<G.inventory.length){
+        const item=G.inventory.splice(ef.kidBday.itemIdx,1)[0];G.reputation=Math.min(100,G.reputation+10);
+        return `You gave away ${item.game.name}. The kid's face lights up! (+10 rep)`;
+      }return "The game was already gone.";
+    }G.reputation=Math.max(0,G.reputation-1);return "You decline. The kid looks disappointed. (-1 rep)";
+  }
+  return "Nothing happened.";
+}
+
+function decayPriceModifiers(){
+  const toRemove=[];
+  for(const k in G.priceModifiers){
+    G.priceModifiers[k]+=(1-G.priceModifiers[k])*0.3;
+    if(Math.abs(G.priceModifiers[k]-1)<0.05)toRemove.push(k);
+  }
+  toRemove.forEach(k=>delete G.priceModifiers[k]);
+}
+
+// =============================================================================
+// PROGRESSION
+// =============================================================================
+
+function scaledUnlockCost(venue){return Math.max(0,Math.floor(venue.unlockCost*G.preset.unlockScale))}
+function canUnlockVenue(venue){
+  if(G.unlockedVenues.includes(venue.level))return[false,"Already unlocked!"];
+  const nextLevel=VENUES.filter(v=>!G.unlockedVenues.includes(v.level)).sort((a,b)=>a.level-b.level)[0];
+  if(!nextLevel||nextLevel.level!==venue.level)return[false,"Must unlock venues in order!"];
+  const cost=scaledUnlockCost(venue);
+  if(G.cash<cost)return[false,`Need ${fmt(cost)} cash (you have ${fmt(G.cash)})`];
+  return[true,"Ready to unlock!"];
+}
+function unlockVenue(venue){
+  const[can,msg]=canUnlockVenue(venue);if(!can)return msg;
+  const cost=scaledUnlockCost(venue);G.cash-=cost;G.unlockedVenues.push(venue.level);G.venueLevel=venue.level;
+  return `Unlocked ${venue.name}! Welcome to the big leagues!`;
+}
+function getAvailableUpgrades(){
+  const avail=[];
+  for(const[k,u] of Object.entries(UPGRADES)){
+    if(G.venueLevel<u.minLevel)continue;
+    if(u.effect==="storagebonus"&&G.storagePurchases<u.maxBuy)avail.push([k,u]);
+    else if(u.effect==="authkit"&&!G.hasAuthKit)avail.push([k,u]);
+    else if(u.effect==="displaycases"&&!G.hasDisplayCases)avail.push([k,u]);
+    else if(u.effect==="gradingsub"&&!G.hasGradingSub)avail.push([k,u]);
+  }
+  return avail;
+}
+function buyUpgrade(key){
+  const u=UPGRADES[key];if(!u)return"Unknown upgrade.";
+  if(G.cash<u.cost)return`Not enough cash! Need ${fmt(u.cost)}`;
+  if(G.venueLevel<u.minLevel)return`Need venue level ${u.minLevel} first.`;
+  G.cash-=u.cost;
+  if(u.effect==="storagebonus"){G.storageBonus+=u.value;G.storagePurchases++;return`Bought ${u.name}! +${u.value} inventory slots!`;}
+  if(u.effect==="authkit"){G.hasAuthKit=true;return`Bought ${u.name}! You can now spot fakes!`;}
+  if(u.effect==="displaycases"){G.hasDisplayCases=true;return`Bought ${u.name}! +10% sell prices at conventions!`;}
+  if(u.effect==="gradingsub"){G.hasGradingSub=true;return`Bought ${u.name}! Access to graded games unlocked!`;}
+  return"Upgrade applied!";
+}
+
+// =============================================================================
+// SCORE / LEADERBOARD
+// =============================================================================
+
+function calcScore(){
+  const nw=netWorth();let rn="Broke",rd="You somehow ended up with less than nothing.";
+  for(const[th,name,desc] of RATINGS){if(nw>=th){rn=name;rd=desc;}}
+  const invVal=G.inventory.reduce((s,e)=>s+Math.floor(e.game.base*CONDITION_MULT[e.condition]*e.qty),0);
+  return{netWorth:nw,cash:G.cash,bank:G.bank,debt:G.debt,invValue:invVal,gamesSold:G.gamesSold,gamesBought:G.gamesBought,
+    totalProfit:G.totalProfit,bestFlip:G.bestFlip,bestFlipGame:G.bestFlipGame,reputation:G.reputation,
+    finalVenue:getVenue(G.venueLevel).name,ratingName:rn,ratingDesc:rd,turnsPlayed:G.turn-1};
+}
+
+function getLeaderboard(){try{return JSON.parse(localStorage.getItem("gameWarsScores")||"[]")}catch{return[]}}
+function saveScore(score){
+  const lb=getLeaderboard();lb.push({name:G.name,netWorth:score.netWorth,rating:score.ratingName,turns:score.turnsPlayed,date:new Date().toLocaleDateString()});
+  lb.sort((a,b)=>b.netWorth-a.netWorth);if(lb.length>20)lb.length=20;
+  try{localStorage.setItem("gameWarsScores",JSON.stringify(lb))}catch{}
+}
+
+// =============================================================================
+// TURN MANAGEMENT
+// =============================================================================
+
+function advanceTurn(){
+  const venue=getVenue(G.venueLevel);
+  const fees=venue.fee;
+  // Apply fees
+  if(fees>0){if(G.cash>=fees)G.cash-=fees;else{const shortfall=fees-G.cash;G.cash=0;G.debt+=shortfall;}}
+  // Debt interest
+  if(G.debt>0){const interest=Math.max(1,Math.floor(G.debt*0.01));G.debt+=interest;}
+  // Bank interest
+  if(G.bank>0){G.bank+=Math.floor(G.bank*0.005);}
+  // Decay price mods
+  decayPriceModifiers();
+  // Advance turn
+  G.turn++;
+  // Game over checks
+  if(G.turn>G.maxTurns){G.gameOver=true;G.gameOverReason="Time's up! The retro market waits for no one.";return fees;}
+  if(G.debt>G.preset.debtGameover&&netWorth()<0){G.gameOver=true;G.gameOverReason="Your uncle sent his 'collection agent'. You're out of the game.";return fees;}
+  // New market
+  G.market=generateMarket();
+  // Events
+  G.activeEvents=checkEvents();
+  return fees;
+}
+
+// =============================================================================
+// UI - SCREEN MANAGEMENT
+// =============================================================================
+
+let currentView = "buy";
+let selectedTurns = 100;
+let pendingEvents = [];
+let pendingEventResults = [];
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $(id).classList.add("active");
+  if(id==="name-screen")setTimeout(()=>$("name-input").focus(),100);
+}
+
+function selectLength(turns){
+  selectedTurns=turns;
+  showScreen("name-screen");
+}
+
+function submitName(){
+  const name=$("name-input").value.trim()||"Player";
+  newGame(selectedTurns,name);
+  showIntro();
+}
+
+$("name-input")?.addEventListener("keydown",e=>{if(e.key==="Enter")submitName()});
+
+function showIntro(){
+  const p=G.preset;
+  $("intro-text").innerHTML=`
+    <div style="color:var(--cyan);font-size:1.5rem;margin-bottom:16px">= = = = = = = = = = =</div>
+    <p style="color:var(--white);font-weight:bold;margin-bottom:12px">The year is 2024.</p>
+    <p>You've been watching retro game YouTube videos for months.</p>
+    <p>Prices are wild. People are finding $500 games at yard sales.</p>
+    <p>Sealed copies of Mario are selling for thousands.</p>
+    <br>
+    <p>You look at your sad little collection of childhood games</p>
+    <p>and think: <span class="em">'I could do this.'</span></p>
+    <br>
+    <p>Your uncle loans you <span class="highlight">${fmt(G.cash)}</span> to get started</p>
+    <p>(at <span class="warning">1% interest per turn</span>, naturally).</p>
+    <p>You owe him <span class="warning">${fmt(G.debt)}</span>.</p>
+    <br>
+    <p>You set up an eBay account. You've got <span class="highlight">${G.maxTurns} turns</span> to build</p>
+    <p>a retro gaming empire from nothing.</p>
+    <br>
+    <p style="color:var(--yellow);font-weight:bold">Buy low. Sell high. Don't get scammed.</p>
+    <div style="color:var(--cyan);font-size:1.5rem;margin-top:16px">= = = = = = = = = = =</div>
+  `;
+  showScreen("intro-screen");
+}
+
+function startGame(){
+  G.market=generateMarket();
+  showScreen("game-screen");
+  refreshAll();
+}
+
+// =============================================================================
+// UI - GAME SCREEN
+// =============================================================================
+
+function refreshAll(){
+  refreshHeader();
+  refreshSidebar();
+  refreshNews();
+  renderView();
+}
+
+function refreshHeader(){
+  $("hdr-turn").textContent=`${G.turn}/${G.maxTurns}`;
+  $("hdr-cash").textContent=fmt(G.cash);
+  $("hdr-debt").textContent=fmt(G.debt);
+  $("hdr-bank").textContent=fmt(G.bank);
+  $("hdr-net").textContent=fmt(netWorth());
+  $("hdr-venue").textContent=getVenue(G.venueLevel).icon+" "+getVenue(G.venueLevel).name;
+}
+
+function refreshSidebar(){
+  const sb=$("sidebar");
+  const filled=Math.min(10,Math.floor(G.reputation/10));
+  const repBar="\u2605".repeat(filled)+"\u2606".repeat(10-filled);
+  let inv="<div style='color:var(--dim);padding:4px'>(empty)</div>";
+  if(G.inventory.length){
+    inv=G.inventory.slice(0,20).map(e=>{
+      const c=COND_SHORT[e.condition]||"?";
+      const q=e.qty>1?` x${e.qty}`:"";
+      return `<div class="inv-item">${shortName(e.game.name,18)} [${c}]${q}</div>`;
+    }).join("");
+    if(G.inventory.length>20)inv+=`<div class="inv-item" style="color:var(--dim)">...and ${G.inventory.length-20} more</div>`;
+  }
+  sb.innerHTML=`
+    <div class="sidebar-section">
+      <h3>-- STATS --</h3>
+      <div class="stat-row"><span style="color:var(--yellow)">Cash:</span><span style="color:var(--green)">${fmt(G.cash)}</span></div>
+      <div class="stat-row"><span style="color:var(--red)">Debt:</span><span style="color:var(--red)">${fmt(G.debt)}</span></div>
+      <div class="stat-row"><span style="color:var(--blue)">Bank:</span><span style="color:var(--blue)">${fmt(G.bank)}</span></div>
+      <div class="stat-row"><span style="color:var(--cyan)">Net:</span><span style="color:var(--cyan)">${fmt(netWorth())}</span></div>
+      <div class="rep-bar" style="color:var(--yellow)">${repBar} ${G.reputation}</div>
+      <div class="stat-row"><span style="color:var(--blue)">Inv:</span><span>${invCount()}/${maxInv()}</span></div>
+    </div>
+    <div class="sidebar-section">
+      <h3>-- INVENTORY --</h3>
+      ${inv}
+    </div>
+  `;
+}
+
+function refreshNews(){
+  $("news-bar").innerHTML=`<span class="label">NEWS:</span> <em>${pick(NEWS_TICKER)}</em>`;
+}
+
+function switchView(view){
+  currentView=view;
+  document.querySelectorAll(".nav-tab").forEach(t=>{t.classList.toggle("active",t.dataset.view===view)});
+  renderView();
+}
+
+function renderView(){
+  const va=$("view-area");const ab=$("action-bar");
+  ab.innerHTML="";
+  if(currentView==="buy")renderBuyView(va,ab);
+  else if(currentView==="sell")renderSellView(va,ab);
+  else if(currentView==="inventory")renderInventoryView(va,ab);
+  else if(currentView==="venue")renderVenueView(va,ab);
+  else if(currentView==="upgrade")renderUpgradeView(va,ab);
+  else if(currentView==="bank")renderBankView(va,ab);
+  else if(currentView==="prices")renderPriceGuide(va,ab);
+}
+
+// --- BUY VIEW ---
+function renderBuyView(va,ab){
+  if(!G.market.length){va.innerHTML='<div class="view-title">Market</div><p style="color:var(--dim)">No games available at this venue.</p>';return;}
+  let rows=G.market.map((l,i)=>{
+    const r=RARITY_SHORT[l.game.rarity];const[dl,dc]=dealQuality(l.price,l.condition,l.game.base);
+    return `<tr onclick="buyGame(${i})">
+      <td class="${r.c}">${r.l}</td><td>${shortName(l.game.name)}</td><td>${sysShort(l.game.system)}</td>
+      <td>${COND_SHORT[l.condition]||l.condition}</td><td style="color:var(--green)">${fmt(l.price)}</td>
+      <td>${l.qty}</td><td class="${dc}">${dl}</td></tr>`;
+  }).join("");
+  va.innerHTML=`<div class="view-title">Market - ${getVenue(G.venueLevel).name}</div>
+    <table class="game-table"><thead><tr><th>R</th><th>Game</th><th>Sys</th><th>Cond</th><th>Price</th><th>Qty</th><th>Deal</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+  ab.innerHTML=`<span class="info">Click a game to buy it. Space: ${invSpace()} slots</span>`;
+}
+
+function buyGame(idx){
+  const l=G.market[idx];if(!l)return;
+  if(G.cash<l.price)return notify("Not enough cash!","error");
+  if(invSpace()<=0)return notify("Inventory full!","error");
+  G.cash-=l.price;G.gamesBought++;
+  // Check if already in inventory with same game+condition
+  const existing=G.inventory.find(e=>e.game.name===l.game.name&&e.game.system===l.game.system&&e.condition===l.condition);
+  if(existing){existing.qty++;existing.buyPrice=Math.floor((existing.buyPrice*(existing.qty-1)+l.price)/existing.qty);}
+  else{G.inventory.push({game:l.game,condition:l.condition,buyPrice:l.price,qty:1});}
+  l.qty--;if(l.qty<=0)G.market.splice(idx,1);
+  notify(`Bought ${l.game.name} [${l.condition}] for ${fmt(l.price)}`,"success");
+  refreshAll();
+}
+
+// --- SELL VIEW ---
+function renderSellView(va,ab){
+  if(!G.inventory.length){va.innerHTML='<div class="view-title">Sell</div><p style="color:var(--dim)">Nothing to sell. Go buy some games!</p>';return;}
+  const venue=getVenue(G.venueLevel);
+  let rows=G.inventory.map((e,i)=>{
+    const sp=calcSellPrice(e,venue,G.turn);const profit=sp-e.buyPrice;
+    const pc=profit>=0?"var(--green)":"var(--red)";
+    const r=RARITY_SHORT[e.game.rarity];
+    return `<tr onclick="sellGame(${i})">
+      <td class="${r.c}">${r.l}</td><td>${shortName(e.game.name)}</td><td>${sysShort(e.game.system)}</td>
+      <td>${COND_SHORT[e.condition]||e.condition}</td><td style="color:var(--green)">${fmt(sp)}</td>
+      <td style="color:${pc}">${fmt(profit)}</td><td>${e.qty}</td></tr>`;
+  }).join("");
+  va.innerHTML=`<div class="view-title">Sell - ${venue.name}</div>
+    <table class="game-table"><thead><tr><th>R</th><th>Game</th><th>Sys</th><th>Cond</th><th>Sell</th><th>Profit</th><th>Qty</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+  ab.innerHTML=`<span class="info">Click a game to sell it at ${venue.name}</span>`;
+}
+
+function sellGame(idx){
+  const e=G.inventory[idx];if(!e)return;
+  const venue=getVenue(G.venueLevel);
+  const sp=calcSellPrice(e,venue,G.turn);
+  const profit=sp-e.buyPrice;
+  G.cash+=sp;G.gamesSold++;G.totalProfit+=profit;
+  if(profit>G.bestFlip){G.bestFlip=profit;G.bestFlipGame=e.game.name;}
+  if(e.qty>1){e.qty--;}else{G.inventory.splice(idx,1);}
+  notify(`Sold ${e.game.name} for ${fmt(sp)} (Profit: ${fmt(profit)})`,"success");
+  refreshAll();
+}
+
+// --- INVENTORY VIEW ---
+function renderInventoryView(va,ab){
+  if(!G.inventory.length){va.innerHTML='<div class="view-title">Inventory</div><p style="color:var(--dim)">Your inventory is empty.</p>';return;}
+  let rows=G.inventory.map((e,i)=>{
+    const val=Math.floor(e.game.base*CONDITION_MULT[e.condition]*e.qty);
+    const r=RARITY_SHORT[e.game.rarity];
+    return `<tr><td class="${r.c}">${r.l}</td><td>${e.game.name}</td><td>${sysShort(e.game.system)}</td>
+      <td>${COND_SHORT[e.condition]||e.condition}</td><td>${fmt(e.buyPrice)}</td><td>${fmt(val)}</td><td>${e.qty}</td></tr>`;
+  }).join("");
+  const totalVal=G.inventory.reduce((s,e)=>s+Math.floor(e.game.base*CONDITION_MULT[e.condition]*e.qty),0);
+  va.innerHTML=`<div class="view-title">Inventory (${invCount()}/${maxInv()}) - Value: ${fmt(totalVal)}</div>
+    <table class="game-table"><thead><tr><th>R</th><th>Game</th><th>Sys</th><th>Cond</th><th>Paid</th><th>Value</th><th>Qty</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+// --- VENUE VIEW ---
+function renderVenueView(va,ab){
+  let cards=VENUES.map(v=>{
+    const isCurrent=v.level===G.venueLevel;const isUnlocked=G.unlockedVenues.includes(v.level);
+    const cost=scaledUnlockCost(v);
+    let status="",cls="venue-card";
+    if(isCurrent){status=`<span style="color:var(--cyan)">[CURRENT]</span>`;cls+=" current";}
+    else if(isUnlocked){status=`<span style="color:var(--green)">[UNLOCKED]</span>`;}
+    else{status=`<span style="color:var(--dim)">[LOCKED - ${fmt(cost)}]</span>`;cls+=" locked";}
+    let actionBtn="";
+    if(isUnlocked&&!isCurrent){actionBtn=`<button class="action-btn" style="margin-top:8px" onclick="switchToVenue(${v.level})">Switch Here</button>`;}
+    else if(!isUnlocked){
+      const[can]=canUnlockVenue(v);
+      actionBtn=`<button class="action-btn success" style="margin-top:8px" ${can?"":"disabled"} onclick="doUnlockVenue(${v.level})">Unlock (${fmt(cost)})</button>`;
+    }
+    return `<div class="${cls}">
+      <div class="venue-name">${v.icon} ${v.name} ${status}</div>
+      <div class="venue-desc">${v.desc}</div>
+      <div class="venue-stats">
+        Slots: ${v.slots} | Buy: ${Math.round(v.buyDisc*100)}% | Sell: ${Math.round(v.sellPrem*100)}% | Fee: ${fmt(v.fee)}/turn | Games: ${v.numGames}
+      </div>
+      ${actionBtn}
+    </div>`;
+  }).join("");
+  va.innerHTML=`<div class="view-title">Venues</div>${cards}`;
+}
+
+function switchToVenue(level){
+  if(!G.unlockedVenues.includes(level))return;
+  G.venueLevel=level;G.market=generateMarket();
+  notify("Switched to "+getVenue(level).name,"success");refreshAll();
+}
+
+function doUnlockVenue(level){
+  const venue=VENUES.find(v=>v.level===level);if(!venue)return;
+  const msg=unlockVenue(venue);
+  G.market=generateMarket();
+  notify(msg,msg.includes("Unlocked")?"success":"error");refreshAll();
+}
+
+// --- UPGRADE VIEW ---
+function renderUpgradeView(va,ab){
+  const avail=getAvailableUpgrades();
+  if(!avail.length){va.innerHTML='<div class="view-title">Upgrades</div><p style="color:var(--dim)">No upgrades available at your current venue level.</p>';return;}
+  let cards=avail.map(([k,u])=>{
+    const canBuy=G.cash>=u.cost;
+    return `<div class="venue-card">
+      <div class="venue-name">${u.icon} ${u.name} - ${fmt(u.cost)}</div>
+      <div class="venue-desc">${u.desc}</div>
+      <button class="action-btn success" style="margin-top:8px" ${canBuy?"":"disabled"} onclick="doBuyUpgrade('${k}')">Buy (${fmt(u.cost)})</button>
+    </div>`;
+  }).join("");
+  va.innerHTML=`<div class="view-title">Upgrades</div>${cards}`;
+}
+
+function doBuyUpgrade(key){
+  const msg=buyUpgrade(key);notify(msg,msg.includes("Bought")?"success":"error");refreshAll();
+}
+
+// --- BANK VIEW ---
+function renderBankView(va,ab){
+  va.innerHTML=`<div class="view-title">Bank</div>
+    <p style="margin:8px 0;font-size:0.85rem;color:var(--dim)">Savings earn 0.5% interest per turn. Debt costs 1% per turn.</p>
+    <div style="margin:16px 0">
+      <div class="stat-row" style="font-size:0.95rem;margin:8px 0"><span style="color:var(--green)">Cash:</span><span style="color:var(--green)">${fmt(G.cash)}</span></div>
+      <div class="stat-row" style="font-size:0.95rem;margin:8px 0"><span style="color:var(--blue)">Bank:</span><span style="color:var(--blue)">${fmt(G.bank)}</span></div>
+      <div class="stat-row" style="font-size:0.95rem;margin:8px 0"><span style="color:var(--red)">Debt:</span><span style="color:var(--red)">${fmt(G.debt)}</span></div>
+    </div>
+    <div class="bank-row">
+      <span style="width:80px;font-size:0.85rem">Deposit:</span>
+      <input class="bank-input" type="number" id="deposit-amt" min="0" max="${G.cash}" placeholder="0">
+      <button class="action-btn success" onclick="doDeposit()">Deposit</button>
+      <button class="action-btn" onclick="doDepositAll()">All</button>
+    </div>
+    <div class="bank-row">
+      <span style="width:80px;font-size:0.85rem">Withdraw:</span>
+      <input class="bank-input" type="number" id="withdraw-amt" min="0" max="${G.bank}" placeholder="0">
+      <button class="action-btn" onclick="doWithdraw()">Withdraw</button>
+      <button class="action-btn" onclick="doWithdrawAll()">All</button>
+    </div>
+    <div class="bank-row">
+      <span style="width:80px;font-size:0.85rem">Pay Debt:</span>
+      <input class="bank-input" type="number" id="paydebt-amt" min="0" max="${Math.min(G.cash,G.debt)}" placeholder="0">
+      <button class="action-btn danger" onclick="doPayDebt()">Pay</button>
+      <button class="action-btn danger" onclick="doPayDebtAll()">All</button>
+    </div>`;
+}
+
+function doDeposit(){const a=parseInt($("deposit-amt").value)||0;if(a<=0||a>G.cash)return notify("Invalid amount","error");G.cash-=a;G.bank+=a;notify(`Deposited ${fmt(a)}`,"success");refreshAll();}
+function doDepositAll(){if(G.cash<=0)return;G.bank+=G.cash;const a=G.cash;G.cash=0;notify(`Deposited ${fmt(a)}`,"success");refreshAll();}
+function doWithdraw(){const a=parseInt($("withdraw-amt").value)||0;if(a<=0||a>G.bank)return notify("Invalid amount","error");G.bank-=a;G.cash+=a;notify(`Withdrew ${fmt(a)}`,"success");refreshAll();}
+function doWithdrawAll(){if(G.bank<=0)return;G.cash+=G.bank;const a=G.bank;G.bank=0;notify(`Withdrew ${fmt(a)}`,"success");refreshAll();}
+function doPayDebt(){const a=parseInt($("paydebt-amt").value)||0;const max=Math.min(G.cash,G.debt);if(a<=0||a>max)return notify("Invalid amount","error");G.cash-=a;G.debt-=a;notify(`Paid ${fmt(a)} debt`,"success");refreshAll();}
+function doPayDebtAll(){const a=Math.min(G.cash,G.debt);if(a<=0)return;G.cash-=a;G.debt-=a;notify(`Paid ${fmt(a)} debt`,"success");refreshAll();}
+
+// --- PRICE GUIDE ---
+let priceGuideSystem = null;
+function renderPriceGuide(va,ab){
+  if(!priceGuideSystem){
+    const systems=getAllSystems();
+    va.innerHTML=`<div class="view-title">Price Guide - Select System</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">${systems.map(s=>`<button class="system-btn" onclick="showSystemPrices('${s.replace(/'/g,"\\'")}')">${s}</button>`).join("")}</div>`;
+  }else{
+    const games=getGamesBySystem(priceGuideSystem);
+    let rows=games.map(g=>{
+      const r=RARITY_SHORT[g.rarity];
+      return `<tr><td class="${r.c}">${r.l}</td><td>${g.name}</td><td>${fmt(g.base)}</td>
+        <td>${fmt(Math.floor(g.base*2.5))}</td><td>${fmt(Math.floor(g.base*6))}</td><td>${fmt(Math.floor(g.base*15))}</td></tr>`;
+    }).join("");
+    va.innerHTML=`<div class="view-title">Price Guide - ${priceGuideSystem}
+      <button class="action-btn" style="float:right;font-size:0.7rem" onclick="priceGuideSystem=null;renderView()">Back</button></div>
+      <table class="game-table"><thead><tr><th>R</th><th>Game</th><th>Loose</th><th>CIB</th><th>Sealed</th><th>Graded</th></tr></thead>
+      <tbody>${rows}</tbody></table>`;
+  }
+}
+
+function showSystemPrices(sys){priceGuideSystem=sys;renderView();}
+
+// =============================================================================
+// NEXT TURN
+// =============================================================================
+
+function doNextTurn(){
+  const fees=advanceTurn();
+  if(G.gameOver){
+    showGameOver();return;
+  }
+  // Show turn summary then events
+  showTurnSummary(fees);
+}
+
+function showTurnSummary(fees){
+  const venue=getVenue(G.venueLevel);
+  let html=`<div class="event-icon">\u{1F4C5}</div>
+    <div class="event-name">Turn ${G.turn} of ${G.maxTurns}</div>
+    <div class="turn-summary">
+      <div style="text-align:center">
+        ${fees>0?`<span style="color:var(--red)">Venue fees: -${fmt(fees)}</span><br>`:""}
+        ${G.debt>0?`<span style="color:var(--red)">Debt interest applied (1%)</span><br>`:""}
+        ${G.bank>0?`<span style="color:var(--green)">Bank interest earned (0.5%)</span><br>`:""}
+        <br>
+        <span style="color:var(--cyan)">New games available at ${venue.name}!</span>
+      </div>
+    </div>
+    <button class="choice-btn" onclick="closeTurnSummary()">Continue</button>`;
+  $("turn-box").innerHTML=html;
+  $("turn-modal").classList.add("active");
+}
+
+function closeTurnSummary(){
+  $("turn-modal").classList.remove("active");
+  refreshAll();
+  // Process events
+  if(G.activeEvents.length){
+    pendingEvents=G.activeEvents.map(ev=>processEvent(ev));
+    G.activeEvents=[];
+    showNextEvent();
+  }
+}
+
+// =============================================================================
+// EVENT DISPLAY
+// =============================================================================
+
+function showNextEvent(){
+  if(!pendingEvents.length)return;
+  const result=pendingEvents.shift();
+  if(result.autoResolved){
+    // Show info then auto-dismiss
+    $("event-box").innerHTML=`
+      <div class="event-icon">${result.event.icon}</div>
+      <div class="event-name">${result.event.name}</div>
+      <div class="event-msg">${result.message}</div>
+      <button class="choice-btn" onclick="dismissEvent()">OK</button>`;
+    $("event-modal").classList.add("active");
+  }else{
+    // Show choices
+    let choicesHtml=result.choices.map((c,i)=>`<button class="choice-btn" onclick="chooseEvent(${i})">${c}</button>`).join("");
+    $("event-box").innerHTML=`
+      <div class="event-icon">${result.event.icon}</div>
+      <div class="event-name">${result.event.name}</div>
+      <div class="event-msg">${result.message}</div>
+      <div class="event-choices">${choicesHtml}</div>`;
+    $("event-modal").classList.add("active");
+    pendingEventResults.push(result);
+  }
+}
+
+function dismissEvent(){
+  $("event-modal").classList.remove("active");
+  refreshAll();
+  if(pendingEvents.length)setTimeout(showNextEvent,300);
+}
+
+function chooseEvent(idx){
+  const result=pendingEventResults.pop();
+  if(result){
+    const msg=resolveEventChoice(result,idx);
+    $("event-box").innerHTML=`
+      <div class="event-icon">${result.event.icon}</div>
+      <div class="event-name">${result.event.name}</div>
+      <div class="event-msg">${msg}</div>
+      <button class="choice-btn" onclick="dismissEvent()">OK</button>`;
+  }
+}
+
+// =============================================================================
+// NEXT TURN BUTTON (always visible)
+// =============================================================================
+
+// Add next turn button to nav
+document.addEventListener("DOMContentLoaded",()=>{
+  const ntBtn=document.createElement("button");
+  ntBtn.className="nav-tab";ntBtn.style.cssText="margin-left:auto;color:var(--yellow);font-weight:bold;border-bottom-color:var(--yellow)";
+  ntBtn.textContent="\u23E9 Next Turn";ntBtn.onclick=doNextTurn;
+  $("nav-tabs").appendChild(ntBtn);
+
+  const qBtn=document.createElement("button");
+  qBtn.className="nav-tab";qBtn.style.color="var(--red)";
+  qBtn.textContent="Quit";qBtn.onclick=()=>{if(confirm("Quit? Your progress will be scored.")){G.gameOver=true;G.gameOverReason="You decided to retire from the game reselling hustle.";showGameOver();}};
+  $("nav-tabs").appendChild(qBtn);
+});
+
+// =============================================================================
+// GAME OVER
+// =============================================================================
+
+function showGameOver(){
+  const score=calcScore();
+  saveScore(score);
+  const lb=getLeaderboard();
+  let lbRows=lb.slice(0,10).map((s,i)=>{
+    const cls=i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":"";
+    return `<tr class="${cls}"><td>${i+1}</td><td>${s.name}</td><td>${fmt(s.netWorth)}</td><td>${s.rating}</td><td>${s.turns}t</td></tr>`;
+  }).join("");
+
+  $("gameover-screen").innerHTML=`
+    <h1>GAME OVER</h1>
+    <div class="go-reason">${G.gameOverReason}</div>
+    <div class="go-rating">
+      <div class="rating-name">${score.ratingName}</div>
+      <div class="rating-desc">${score.ratingDesc}</div>
+    </div>
+    <div class="go-stats">
+      <div><span class="label">Net Worth:</span><span class="value" style="color:var(--cyan)">${fmt(score.netWorth)}</span></div>
+      <div><span class="label">Cash:</span><span class="value" style="color:var(--green)">${fmt(score.cash)}</span></div>
+      <div><span class="label">Bank:</span><span class="value" style="color:var(--blue)">${fmt(score.bank)}</span></div>
+      <div><span class="label">Debt:</span><span class="value" style="color:var(--red)">${fmt(score.debt)}</span></div>
+      <div><span class="label">Inventory Value:</span><span class="value">${fmt(score.invValue)}</span></div>
+      <div><span class="label">Games Sold:</span><span class="value">${score.gamesSold}</span></div>
+      <div><span class="label">Total Profit:</span><span class="value" style="color:var(--green)">${fmt(score.totalProfit)}</span></div>
+      <div><span class="label">Best Flip:</span><span class="value" style="color:var(--yellow)">${fmt(score.bestFlip)} (${score.bestFlipGame||"N/A"})</span></div>
+      <div><span class="label">Reputation:</span><span class="value">${score.reputation}/100</span></div>
+      <div><span class="label">Final Venue:</span><span class="value">${score.finalVenue}</span></div>
+      <div><span class="label">Turns Played:</span><span class="value">${score.turnsPlayed}</span></div>
+    </div>
+    <div class="leaderboard">
+      <h3 style="color:var(--cyan);margin-bottom:8px">Leaderboard</h3>
+      <table><thead><tr><th>#</th><th>Name</th><th>Net Worth</th><th>Rating</th><th>Turns</th></tr></thead>
+      <tbody>${lbRows||"<tr><td colspan=5 style='color:var(--dim)'>No scores yet</td></tr>"}</tbody></table>
+    </div>
+    <div style="margin-top:20px">
+      <button class="menu-btn" onclick="location.reload()">PLAY AGAIN</button>
+    </div>`;
+  showScreen("gameover-screen");
+}
+
+function showLeaderboardFromTitle(){
+  const lb=getLeaderboard();
+  if(!lb.length){notify("No scores yet! Play a game first.","error");return;}
+  // Quick display via game over screen
+  let lbRows=lb.slice(0,10).map((s,i)=>{
+    const cls=i===0?"rank-1":i===1?"rank-2":i===2?"rank-3":"";
+    return `<tr class="${cls}"><td>${i+1}</td><td>${s.name}</td><td>${fmt(s.netWorth)}</td><td>${s.rating}</td><td>${s.turns}t</td></tr>`;
+  }).join("");
+  $("gameover-screen").innerHTML=`
+    <h1>LEADERBOARD</h1>
+    <div class="leaderboard" style="margin-top:20px">
+      <table><thead><tr><th>#</th><th>Name</th><th>Net Worth</th><th>Rating</th><th>Turns</th></tr></thead>
+      <tbody>${lbRows}</tbody></table>
+    </div>
+    <div style="margin-top:20px">
+      <button class="menu-btn" onclick="showScreen('title-screen')">BACK</button>
+    </div>`;
+  showScreen("gameover-screen");
+}
+
+// =============================================================================
+// NOTIFICATION
+// =============================================================================
+
+let notifyTimeout=null;
+function notify(msg,type="info"){
+  const n=$("notification");n.textContent=msg;n.className="notification show "+(type==="error"?"error":type==="success"?"success":"");
+  clearTimeout(notifyTimeout);notifyTimeout=setTimeout(()=>n.classList.remove("show"),2500);
+}
+
+// =============================================================================
+// KEYBOARD SHORTCUTS
+// =============================================================================
+
+document.addEventListener("keydown",e=>{
+  if(!$("game-screen").classList.contains("active"))return;
+  if(e.target.tagName==="INPUT")return;
+  const key=e.key.toLowerCase();
+  if(key==="b")switchView("buy");
+  else if(key==="s")switchView("sell");
+  else if(key==="i")switchView("inventory");
+  else if(key==="v")switchView("venue");
+  else if(key==="u")switchView("upgrade");
+  else if(key==="k")switchView("bank");
+  else if(key==="p")switchView("prices");
+  else if(key==="n"||key==="enter")doNextTurn();
+});
+</script>
+</body>
+</html>
