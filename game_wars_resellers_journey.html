@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game Wars: Reseller's Journey - Advanced</title>
+<style>
+/* ===== RESET & BASE ===== */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a14;--bg2:#12122a;--bg3:#1a1a3e;--bg4:#222252;
+  --text:#e0e0e0;--dim:#888;--cyan:#00d4ff;--green:#00ff88;
+  --red:#ff4466;--yellow:#ffd700;--magenta:#ff66ff;--orange:#ff8844;
+  --blue:#4488ff;--white:#ffffff;
+  --panel-bg:rgba(18,18,42,0.95);--border:rgba(0,212,255,0.3);
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Courier New',monospace;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:3px}
+
+/* ===== SCREENS ===== */
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+
+/* ===== TITLE SCREEN ===== */
+#title-screen{justify-content:center;align-items:center;text-align:center;background:radial-gradient(ellipse at center,var(--bg3) 0%,var(--bg) 70%)}
+#title-screen h1{font-size:3rem;color:var(--cyan);text-shadow:0 0 20px rgba(0,212,255,0.5);margin-bottom:0.5rem;letter-spacing:4px}
+#title-screen .subtitle{color:var(--yellow);font-size:1rem;margin-bottom:2rem}
+#title-screen .tagline{color:var(--dim);font-size:0.85rem;margin-bottom:2rem;font-style:italic}
+.menu-btn{background:transparent;border:2px solid var(--cyan);color:var(--cyan);padding:12px 40px;font-family:inherit;font-size:1rem;cursor:pointer;margin:6px;transition:all 0.2s;letter-spacing:2px}
+.menu-btn:hover{background:var(--cyan);color:var(--bg);box-shadow:0 0 15px rgba(0,212,255,0.5)}
+.menu-btn.secondary{border-color:var(--dim);color:var(--dim)}
+.menu-btn.secondary:hover{background:var(--dim);color:var(--bg)}
+
+/* ===== LENGTH SELECT ===== */
+#length-screen{justify-content:center;align-items:center;text-align:center}
+#length-screen h2{color:var(--cyan);font-size:1.8rem;margin-bottom:1.5rem}
+.length-card{background:var(--bg2);border:2px solid var(--border);padding:20px 40px;margin:8px;cursor:pointer;transition:all 0.2s;width:380px;text-align:left}
+.length-card:hover{border-color:var(--cyan);background:var(--bg3);box-shadow:0 0 10px rgba(0,212,255,0.3)}
+.length-card .name{color:var(--cyan);font-size:1.1rem;font-weight:bold}
+.length-card .details{color:var(--dim);font-size:0.8rem;margin-top:4px}
+.length-card .stats{color:var(--green);font-size:0.8rem;margin-top:4px}
+
+/* ===== NAME INPUT ===== */
+#name-screen{justify-content:center;align-items:center;text-align:center}
+#name-screen h2{color:var(--cyan);font-size:1.8rem;margin-bottom:1rem}
+#name-input{background:var(--bg2);border:2px solid var(--cyan);color:var(--cyan);padding:12px 20px;font-family:inherit;font-size:1.2rem;text-align:center;width:300px;outline:none}
+#name-input::placeholder{color:var(--dim)}
+
+/* ===== INTRO SCREEN ===== */
+#intro-screen{justify-content:center;align-items:center}
+#intro-text{max-width:700px;text-align:center;line-height:1.8;font-size:0.95rem}
+#intro-text .highlight{color:var(--green);font-weight:bold}
+#intro-text .warning{color:var(--red);font-weight:bold}
+#intro-text .em{color:var(--yellow);font-style:italic}
+
+/* ===== GAME SCREEN ===== */
+#game-screen{flex-direction:column}
+.header-bar{display:flex;justify-content:space-between;align-items:center;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;min-height:36px;flex-wrap:wrap}
+.header-left{display:flex;gap:20px;align-items:center;font-size:0.85rem}
+.header-right{font-size:0.85rem;color:var(--dim)}
+.stat-label{color:var(--dim)}
+.stat-cash{color:var(--green)}
+.stat-debt{color:var(--red)}
+.stat-bank{color:var(--blue)}
+.stat-net{color:var(--cyan);font-weight:bold}
+.stat-ap{color:var(--magenta)}
+
+.body-wrap{display:flex;flex:1;overflow:hidden}
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.sidebar{width:280px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;padding:10px;flex-shrink:0}
+.sidebar h3{color:var(--cyan);font-size:0.85rem;margin-bottom:8px;text-align:center}
+.sidebar-section{margin-bottom:12px}
+.sidebar .stat-row{display:flex;justify-content:space-between;font-size:0.8rem;padding:2px 4px}
+.sidebar .inv-item{font-size:0.75rem;padding:2px 4px;color:var(--dim)}
+.rep-bar{font-size:0.8rem;text-align:center;margin:4px 0}
+
+/* Calendar widget */
+.calendar-widget{font-size:0.75rem;margin:8px 0;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:2px}
+.calendar-event{padding:2px 4px;margin:2px 0;background:rgba(0,255,136,0.1);border-left:2px solid var(--green);font-size:0.7rem;color:var(--green)}
+.calendar-event.soon{border-left-color:var(--yellow);color:var(--yellow)}
+.calendar-event.critical{border-left-color:var(--red);color:var(--red)}
+
+/* Nav tabs */
+.nav-tabs{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.nav-tab{padding:8px 16px;cursor:pointer;font-family:inherit;font-size:0.8rem;color:var(--dim);background:transparent;border:none;border-bottom:2px solid transparent;transition:all 0.15s}
+.nav-tab:hover{color:var(--cyan);background:rgba(0,212,255,0.05)}
+.nav-tab.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(0,212,255,0.1)}
+.nav-tab:disabled{opacity:0.3;cursor:not-allowed}
+
+/* View area */
+.view-area{flex:1;overflow-y:auto;padding:12px 16px}
+.view-title{color:var(--cyan);font-size:1.1rem;margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:6px}
+
+/* Tables */
+.game-table{width:100%;border-collapse:collapse;font-size:0.8rem}
+.game-table th{text-align:left;color:var(--cyan);padding:6px 8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg)}
+.game-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer}
+.game-table tr:hover td{background:rgba(0,212,255,0.08)}
+.game-table tr.selected td{background:rgba(0,212,255,0.15)}
+.rarity-C{color:var(--text)}.rarity-U{color:var(--green)}.rarity-R{color:var(--blue)}.rarity-V{color:var(--magenta)}.rarity-G{color:var(--yellow)}
+.deal-STEAL{color:var(--green);font-weight:bold}.deal-Good{color:var(--green)}.deal-Fair{color:var(--yellow)}.deal-High{color:var(--red)}.deal-RIP{color:var(--red);font-weight:bold}
+.fake-tag{color:var(--red);font-weight:bold}
+.damage-tag{color:var(--orange)}
+
+/* Action bar at bottom of view */
+.action-bar{display:flex;gap:8px;padding:8px 16px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;align-items:center;flex-wrap:wrap}
+.action-bar .info{color:var(--dim);font-size:0.8rem;flex:1}
+.action-btn{background:var(--bg3);border:1px solid var(--cyan);color:var(--cyan);padding:6px 16px;font-family:inherit;font-size:0.8rem;cursor:pointer;transition:all 0.15s}
+.action-btn:hover{background:var(--cyan);color:var(--bg)}
+.action-btn:disabled{opacity:0.3;cursor:not-allowed}
+.action-btn.danger{border-color:var(--red);color:var(--red)}
+.action-btn.danger:hover{background:var(--red);color:var(--bg)}
+.action-btn.success{border-color:var(--green);color:var(--green)}
+.action-btn.success:hover{background:var(--green);color:var(--bg)}
+
+/* Bank inputs */
+.bank-row{display:flex;gap:8px;align-items:center;margin:8px 0}
+.bank-input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;font-family:inherit;font-size:0.85rem;width:120px;outline:none}
+.bank-input:focus{border-color:var(--cyan)}
+
+/* Venue cards */
+.venue-card{background:var(--bg3);border:1px solid var(--border);padding:12px;margin:8px 0;transition:all 0.2s}
+.venue-card.current{border-color:var(--cyan);box-shadow:0 0 8px rgba(0,212,255,0.2)}
+.venue-card.locked{opacity:0.5;cursor:not-allowed}
+.venue-card .venue-name{color:var(--cyan);font-size:1rem;font-weight:bold}
+.venue-card .venue-desc{color:var(--dim);font-size:0.8rem;margin:4px 0}
+.venue-card .venue-stats{font-size:0.8rem;color:var(--text);margin-top:6px}
+.venue-card .venue-unlock{color:var(--red);font-size:0.8rem;margin-top:4px}
+
+/* Upgrade grid */
+.upgrade-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.upgrade-card{background:var(--bg3);border:1px solid var(--border);padding:10px;cursor:pointer;transition:all 0.2s}
+.upgrade-card:hover{border-color:var(--cyan);background:rgba(0,212,255,0.08)}
+.upgrade-card.owned{border-color:var(--green);background:rgba(0,255,136,0.08)}
+.upgrade-card.locked{opacity:0.5;cursor:not-allowed}
+.upgrade-name{color:var(--cyan);font-weight:bold;font-size:0.85rem}
+.upgrade-cost{color:var(--yellow);font-size:0.8rem}
+.upgrade-desc{color:var(--dim);font-size:0.75rem;margin-top:4px}
+
+/* System buttons */
+.system-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px;margin:3px;font-family:inherit;font-size:0.75rem;cursor:pointer}
+.system-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.system-btn.active{border-color:var(--cyan);background:rgba(0,212,255,0.1);color:var(--cyan)}
+
+/* News bar */
+.news-bar{padding:4px 16px;background:var(--bg2);border-top:1px solid var(--border);font-size:0.75rem;color:var(--dim);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.news-bar span.label{color:var(--cyan);font-weight:bold}
+
+/* Footer */
+.footer{display:flex;justify-content:space-between;padding:4px 16px;background:var(--bg2);border-top:1px solid var(--border);font-size:0.7rem;color:var(--dim);flex-shrink:0}
+
+/* ===== EVENT MODAL ===== */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:100;justify-content:center;align-items:center;overflow:auto}
+.modal-overlay.active{display:flex}
+.modal-box{background:var(--bg2);border:2px solid var(--cyan);padding:24px;max-width:550px;width:90%;text-align:center;box-shadow:0 0 30px rgba(0,212,255,0.3);margin:auto}
+.modal-box .event-icon{font-size:2.5rem;margin-bottom:10px}
+.modal-box .event-name{color:var(--cyan);font-size:1.2rem;font-weight:bold;margin-bottom:8px}
+.modal-box .event-msg{color:var(--text);font-size:0.9rem;margin-bottom:16px;line-height:1.6}
+.modal-box .event-choices{display:flex;flex-direction:column;gap:8px}
+.choice-btn{background:var(--bg3);border:1px solid var(--cyan);color:var(--cyan);padding:10px;font-family:inherit;font-size:0.85rem;cursor:pointer;transition:all 0.15s}
+.choice-btn:hover{background:var(--cyan);color:var(--bg)}
+
+/* Lot reveal modal */
+.lot-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;text-align:left}
+.lot-item{background:var(--bg3);padding:8px;border:1px solid var(--border);font-size:0.8rem}
+.lot-item .name{color:var(--cyan)}
+.lot-item .details{color:var(--dim);font-size:0.75rem}
+
+/* ===== GAME OVER ===== */
+#gameover-screen{justify-content:center;align-items:center;text-align:center}
+#gameover-screen h1{color:var(--yellow);font-size:2rem;margin-bottom:8px}
+.go-reason{color:var(--dim);margin-bottom:20px;font-style:italic}
+.go-stats{text-align:left;display:inline-block;font-size:0.85rem;line-height:2}
+.go-stats .label{color:var(--dim);display:inline-block;width:180px}
+.go-stats .value{font-weight:bold}
+.go-rating{margin:20px 0;padding:16px;background:var(--bg3);border:1px solid var(--yellow)}
+.go-rating .rating-name{color:var(--yellow);font-size:1.4rem;font-weight:bold}
+.go-rating .rating-desc{color:var(--text);font-size:0.85rem;margin-top:6px}
+
+/* ===== LEADERBOARD ===== */
+.leaderboard{margin:16px 0;font-size:0.8rem}
+.leaderboard table{width:100%;max-width:500px;margin:0 auto;border-collapse:collapse}
+.leaderboard th{color:var(--cyan);padding:4px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.leaderboard td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.leaderboard .rank-1{color:var(--yellow)}.leaderboard .rank-2{color:var(--dim)}.leaderboard .rank-3{color:var(--orange)}
+
+/* ===== NOTIFICATION ===== */
+.notification{position:fixed;top:50px;right:20px;background:var(--bg3);border:1px solid var(--cyan);color:var(--cyan);padding:10px 20px;font-family:inherit;font-size:0.85rem;z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.notification.show{opacity:1}
+.notification.error{border-color:var(--red);color:var(--red)}
+.notification.success{border-color:var(--green);color:var(--green)}
+
+/* Day summary */
+.day-summary{font-size:0.85rem;line-height:1.8;text-align:left;margin:10px 0}
+.summary-item{padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+
+/* Responsive */
+@media(max-width:900px){
+  .sidebar{display:none}
+  .header-left{gap:10px;font-size:0.75rem}
+  .nav-tab{padding:6px 10px;font-size:0.7rem}
+  .game-table{font-size:0.7rem}
+  .upgrade-grid{grid-template-columns:1fr}
+  html,body{overflow:auto;-webkit-overflow-scrolling:touch}
+  .screen{overflow:auto;-webkit-overflow-scrolling:touch}
+  #title-screen{min-height:100vh;padding:40px 20px}
+  #title-screen h1{font-size:1.8rem;letter-spacing:2px}
+  #title-screen .subtitle{font-size:0.85rem}
+  #length-screen{padding:30px 15px}
+  .length-card{width:90%;max-width:380px;padding:15px 20px}
+  #name-screen{padding:30px 15px}
+  #intro-screen{padding:30px 15px}
+  .menu-btn{padding:14px 32px;font-size:0.9rem}
+  .header-bar{padding:4px 8px;flex-wrap:wrap;gap:4px}
+  .body-wrap{flex-direction:column}
+  .view-area{padding:8px 10px;min-height:200px}
+  .action-bar{padding:6px 10px;flex-wrap:wrap;gap:4px}
+  .modal-box{padding:16px;width:95%}
+  .venue-card{padding:8px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== NOTIFICATION ===== -->
+<div id="notification" class="notification"></div>
+
+<!-- ===== TITLE SCREEN ===== -->
+<div id="title-screen" class="screen active">
+  <h1>GAME WARS: RESELLER'S JOURNEY</h1>
+  <div class="subtitle">Advanced Retro Game Tycoon Simulator</div>
+  <div class="tagline">From childhood collection to retail empire. Buy low. Sell high. Manage your reputation.</div>
+  <div>
+    <button class="menu-btn" onclick="showScreen('length')">NEW GAME</button>
+  </div>
+  <div style="margin-top:30px">
+    <button class="menu-btn secondary" onclick="showLeaderboardFromTitle()">LEADERBOARD</button>
+  </div>
+</div>
+
+<!-- ===== LENGTH SELECT ===== -->
+<div id="length-screen" class="screen">
+  <h2>Choose Game Length</h2>
+  <div class="length-card" onclick="selectLength('quick')">
+    <div class="name">Quick Game - 30 days (~20 min)</div>
+    <div class="stats">Start: 12 games / $0 cash / Venue costs 60% off / Higher event rate</div>
+    <div class="details">Fast-paced intro to the mechanics</div>
+  </div>
+  <div class="length-card" onclick="selectLength('standard')">
+    <div class="name">Standard Game - 60 days (~40 min)</div>
+    <div class="stats">Start: 12 games / $0 cash / Venue costs 80% off / Normal events</div>
+    <div class="details">Balanced experience. Reach the game store!</div>
+  </div>
+  <div class="length-card" onclick="selectLength('marathon')">
+    <div class="name">Marathon - 120 days (~75 min)</div>
+    <div class="stats">Start: 10 games / $0 cash / Full venue prices / True challenge</div>
+    <div class="details">The ultimate experience. Own the store.</div>
+  </div>
+</div>
+
+<!-- ===== NAME INPUT ===== -->
+<div id="name-screen" class="screen">
+  <h2>What's Your Name, Reseller?</h2>
+  <div style="margin:16px 0">
+    <input type="text" id="name-input" placeholder="Enter your name" maxlength="20" autofocus>
+  </div>
+  <button class="menu-btn" onclick="submitName()">LET'S GO</button>
+</div>
+
+<!-- ===== INTRO SCREEN ===== -->
+<div id="intro-screen" class="screen">
+  <div id="intro-text"></div>
+  <div style="margin-top:24px">
+    <button class="menu-btn" onclick="startGame()">BEGIN YOUR JOURNEY</button>
+  </div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="game-screen" class="screen">
+  <div class="header-bar">
+    <div class="header-left">
+      <span><span class="stat-label">Day </span><span id="hdr-day">1/60</span></span>
+      <span><span class="stat-label">AP </span><span class="stat-ap" id="hdr-ap">4/4</span></span>
+      <span><span class="stat-label">Cash </span><span class="stat-cash" id="hdr-cash">$0</span></span>
+      <span><span class="stat-label">Pending </span><span class="stat-green" id="hdr-pending">$0</span></span>
+      <span><span class="stat-label">Debt </span><span class="stat-debt" id="hdr-debt">$0</span></span>
+      <span><span class="stat-label">Bank </span><span class="stat-bank" id="hdr-bank">$0</span></span>
+      <span><span class="stat-label">Net </span><span class="stat-net" id="hdr-net">$0</span></span>
+    </div>
+  </div>
+  <div class="body-wrap">
+    <div class="main-content">
+      <div class="nav-tabs" id="nav-tabs">
+        <button class="nav-tab active" data-view="ebay-buy" onclick="switchView('ebay-buy')">eBay Buy</button>
+        <button class="nav-tab" data-view="ebay-sell" onclick="switchView('ebay-sell')">eBay Sell</button>
+        <button class="nav-tab" data-view="yard-sale" onclick="switchView('yard-sale')">Yard Sale</button>
+        <button class="nav-tab" data-view="flea-market" onclick="switchView('flea-market')">Flea Market</button>
+        <button class="nav-tab" data-view="convention" onclick="switchView('convention')">Convention</button>
+        <button class="nav-tab" data-view="inventory" onclick="switchView('inventory')">Inventory</button>
+        <button class="nav-tab" data-view="upgrades" onclick="switchView('upgrades')">Upgrades</button>
+        <button class="nav-tab" data-view="bank" onclick="switchView('bank')">Bank</button>
+        <button class="nav-tab" data-view="calendar" onclick="switchView('calendar')">Calendar</button>
+      </div>
+      <div class="view-area" id="view-area"></div>
+      <div class="action-bar" id="action-bar"></div>
+    </div>
+    <div class="sidebar" id="sidebar"></div>
+  </div>
+  <div class="news-bar" id="news-bar"><span class="label">NEWS:</span> Welcome to Game Wars: Reseller's Journey!</div>
+  <div class="footer">
+    <span>Game Wars: Reseller's Journey</span>
+    <span id="footer-hint">Press SPACE to end day | Select items to interact</span>
+  </div>
+</div>
+
+<!-- ===== EVENT MODAL ===== -->
+<div id="event-modal" class="modal-overlay">
+  <div class="modal-box" id="event-box"></div>
+</div>
+
+<!-- ===== DAY SUMMARY MODAL ===== -->
+<div id="day-modal" class="modal-overlay">
+  <div class="modal-box" id="day-box"></div>
+</div>
+
+<!-- ===== GAME OVER ===== -->
+<div id="gameover-screen" class="screen"></div>
+
+<script>
+// =============================================================================
+// CONSTANTS & DATA
+// =============================================================================
+
+const Rarity = {COMMON:"Common",UNCOMMON:"Uncommon",RARE:"Rare",VERY_RARE:"Very Rare",GRAIL:"Grail"};
+const Condition = {LOOSE:"Loose",CIB:"CIB",SEALED:"Sealed",GRADED:"Graded"};
+const CONDITION_MULT = {Loose:1.0,CIB:2.5,Sealed:6.0,Graded:15.0};
+const RARITY_ORDER = ["Common","Uncommon","Rare","Very Rare","Grail"];
+const AP_PER_DAY = 4;
+const BASE_INVENTORY_SLOTS = 15;
+const EBAY_FEE = 0.08;
+const EBAY_SHIPPING_DAYS = 2;
+
+// Game presets
+const PRESETS = {
+  quick: {days:30, startGames:12, venueCostMult:0.6, eventMult:1.5},
+  standard: {days:60, startGames:12, venueCostMult:0.8, eventMult:1.0},
+  marathon: {days:120, startGames:10, venueCostMult:1.0, eventMult:0.8}
+};
+
+// Game Catalog (126 games from original)
+const GAME_CATALOG = [
+  // NES
+  {name:"Super Mario Bros.",system:"NES",base:15,rarity:"Common",minM:0.3,maxM:2.0},
+  {name:"Legend of Zelda",system:"NES",base:25,rarity:"Common",minM:0.4,maxM:2.5},
+  {name:"Contra",system:"NES",base:30,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Castlevania",system:"NES",base:35,rarity:"Uncommon",minM:0.5,maxM:3.2},
+  {name:"Metroid",system:"NES",base:40,rarity:"Uncommon",minM:0.6,maxM:3.5},
+  {name:"Mega Man",system:"NES",base:20,rarity:"Uncommon",minM:0.5,maxM:2.8},
+  {name:"Duck Hunt",system:"NES",base:12,rarity:"Common",minM:0.2,maxM:1.5},
+  {name:"Double Dragon",system:"NES",base:25,rarity:"Uncommon",minM:0.4,maxM:2.5},
+  {name:"Kirby's Adventure",system:"NES",base:35,rarity:"Uncommon",minM:0.5,maxM:3.2},
+  {name:"Punch-Out",system:"NES",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Mario Bros.",system:"NES",base:18,rarity:"Common",minM:0.3,maxM:2.0},
+  {name:"Excitebike",system:"NES",base:20,rarity:"Common",minM:0.3,maxM:2.2},
+  // SNES
+  {name:"Super Mario World",system:"SNES",base:30,rarity:"Common",minM:0.4,maxM:2.8},
+  {name:"Legend of Zelda Link to Past",system:"SNES",base:45,rarity:"Uncommon",minM:0.6,maxM:3.5},
+  {name:"Donkey Country",system:"SNES",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Super Metroid",system:"SNES",base:50,rarity:"Uncommon",minM:0.7,maxM:4.0},
+  {name:"Chrono Trigger",system:"SNES",base:85,rarity:"Rare",minM:1.0,maxM:6.0},
+  {name:"Final Fantasy III",system:"SNES",base:75,rarity:"Rare",minM:0.9,maxM:5.5},
+  {name:"Street Fighter II",system:"SNES",base:40,rarity:"Uncommon",minM:0.5,maxM:3.2},
+  {name:"Mega Man X",system:"SNES",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Kirby Super Star",system:"SNES",base:40,rarity:"Uncommon",minM:0.6,maxM:3.5},
+  {name:"Castlevania IV",system:"SNES",base:45,rarity:"Uncommon",minM:0.6,maxM:3.5},
+  // Genesis
+  {name:"Sonic the Hedgehog",system:"Genesis",base:25,rarity:"Common",minM:0.3,maxM:2.5},
+  {name:"Sonic 2",system:"Genesis",base:28,rarity:"Common",minM:0.3,maxM:2.8},
+  {name:"Sonic 3",system:"Genesis",base:32,rarity:"Uncommon",minM:0.4,maxM:3.0},
+  {name:"Mortal Kombat",system:"Genesis",base:35,rarity:"Uncommon",minM:0.5,maxM:3.2},
+  {name:"Ecco the Dolphin",system:"Genesis",base:22,rarity:"Common",minM:0.3,maxM:2.2},
+  {name:"Golden Axe",system:"Genesis",base:20,rarity:"Common",minM:0.3,maxM:2.0},
+  {name:"Streets of Rage",system:"Genesis",base:30,rarity:"Uncommon",minM:0.4,maxM:2.8},
+  {name:"Gunstar Heroes",system:"Genesis",base:85,rarity:"Rare",minM:1.0,maxM:6.0},
+  {name:"Vectorman",system:"Genesis",base:28,rarity:"Uncommon",minM:0.4,maxM:2.6},
+  {name:"Phantasy Star IV",system:"Genesis",base:65,rarity:"Rare",minM:0.8,maxM:5.0},
+  // Game Boy
+  {name:"Tetris",system:"Game Boy",base:20,rarity:"Common",minM:0.3,maxM:2.0},
+  {name:"Super Mario Land",system:"Game Boy",base:25,rarity:"Common",minM:0.3,maxM:2.5},
+  {name:"The Legend of Zelda Link's Awakening",system:"Game Boy",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Pokemon Red",system:"Game Boy",base:35,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Pokemon Blue",system:"Game Boy",base:35,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Donkey Kong Land",system:"Game Boy",base:22,rarity:"Common",minM:0.3,maxM:2.2},
+  {name:"Kirby's Dream Land",system:"Game Boy",base:25,rarity:"Common",minM:0.3,maxM:2.5},
+  {name:"Wario Land",system:"Game Boy",base:28,rarity:"Uncommon",minM:0.4,maxM:2.8},
+  {name:"Metroid II",system:"Game Boy",base:30,rarity:"Uncommon",minM:0.4,maxM:3.0},
+  {name:"Super Mario Land 2",system:"Game Boy",base:30,rarity:"Uncommon",minM:0.4,maxM:3.0},
+  // N64
+  {name:"Super Mario 64",system:"N64",base:50,rarity:"Uncommon",minM:0.6,maxM:4.0},
+  {name:"The Legend of Zelda Ocarina of Time",system:"N64",base:60,rarity:"Rare",minM:0.8,maxM:5.0},
+  {name:"Goldeneye 007",system:"N64",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Mario Kart 64",system:"N64",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Perfect Dark",system:"N64",base:55,rarity:"Rare",minM:0.7,maxM:4.5},
+  {name:"Donkey Kong 64",system:"N64",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Star Fox 64",system:"N64",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Banjo-Kazooie",system:"N64",base:50,rarity:"Uncommon",minM:0.6,maxM:4.0},
+  {name:"The Legend of Zelda Majora's Mask",system:"N64",base:65,rarity:"Rare",minM:0.8,maxM:5.2},
+  {name:"Mario Party",system:"N64",base:30,rarity:"Uncommon",minM:0.4,maxM:2.8},
+  // GameCube
+  {name:"Super Smash Bros Melee",system:"GameCube",base:55,rarity:"Rare",minM:0.7,maxM:4.5},
+  {name:"The Legend of Zelda The Wind Waker",system:"GameCube",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Metroid Prime",system:"GameCube",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Mario Kart Double Dash",system:"GameCube",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Resident Evil 4",system:"GameCube",base:50,rarity:"Uncommon",minM:0.6,maxM:4.0},
+  {name:"F-Zero GX",system:"GameCube",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Eternal Darkness",system:"GameCube",base:75,rarity:"Rare",minM:0.9,maxM:5.5},
+  {name:"Pikmin",system:"GameCube",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Chibi-Robo",system:"GameCube",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Kirby Air Ride",system:"GameCube",base:42,rarity:"Uncommon",minM:0.6,maxM:3.6},
+  // Wii
+  {name:"Wii Sports",system:"Wii",base:15,rarity:"Common",minM:0.2,maxM:1.5},
+  {name:"Super Smash Bros Brawl",system:"Wii",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Mario Kart Wii",system:"Wii",base:32,rarity:"Uncommon",minM:0.4,maxM:3.0},
+  {name:"The Legend of Zelda Twilight Princess",system:"Wii",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Wii Sports Resort",system:"Wii",base:20,rarity:"Common",minM:0.3,maxM:2.0},
+  // Switch
+  {name:"The Legend of Zelda Breath of the Wild",system:"Switch",base:50,rarity:"Uncommon",minM:0.6,maxM:4.0},
+  {name:"Super Smash Bros Ultimate",system:"Switch",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Mario Kart 8 Deluxe",system:"Switch",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Super Mario Odyssey",system:"Switch",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Animal Crossing New Horizons",system:"Switch",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  // PS1
+  {name:"Final Fantasy VII",system:"PS1",base:80,rarity:"Rare",minM:1.0,maxM:6.0},
+  {name:"Metal Gear Solid",system:"PS1",base:60,rarity:"Rare",minM:0.8,maxM:5.0},
+  {name:"Resident Evil",system:"PS1",base:55,rarity:"Rare",minM:0.7,maxM:4.5},
+  {name:"Chrono Cross",system:"PS1",base:70,rarity:"Rare",minM:0.9,maxM:5.5},
+  {name:"Gran Turismo",system:"PS1",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Crash Bandicoot",system:"PS1",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Spyro the Dragon",system:"PS1",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Tekken 3",system:"PS1",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Tony Hawk's Pro Skater",system:"PS1",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Final Fantasy Tactics",system:"PS1",base:75,rarity:"Rare",minM:0.9,maxM:5.5},
+  // PS2
+  {name:"Grand Theft Auto III",system:"PS2",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Final Fantasy X",system:"PS2",base:50,rarity:"Uncommon",minM:0.6,maxM:4.0},
+  {name:"Metal Gear Solid 2",system:"PS2",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Resident Evil 4",system:"PS2",base:50,rarity:"Uncommon",minM:0.6,maxM:4.0},
+  {name:"Kingdom Hearts",system:"PS2",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Devil May Cry",system:"PS2",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Ratchet and Clank",system:"PS2",base:38,rarity:"Uncommon",minM:0.5,maxM:3.3},
+  {name:"Jak and Daxter",system:"PS2",base:42,rarity:"Uncommon",minM:0.6,maxM:3.6},
+  {name:"Tony Hawk's Pro Skater 2",system:"PS2",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Madden NFL",system:"PS2",base:15,rarity:"Common",minM:0.2,maxM:1.5},
+  // Xbox
+  {name:"Halo Combat Evolved",system:"Xbox",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Halo 2",system:"Xbox",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Star Wars Knights of the Old Republic",system:"Xbox",base:50,rarity:"Uncommon",minM:0.6,maxM:4.0},
+  {name:"Splinter Cell",system:"Xbox",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Grand Theft Auto III",system:"Xbox",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Fable",system:"Xbox",base:38,rarity:"Uncommon",minM:0.5,maxM:3.3},
+  {name:"Ninja Gaiden",system:"Xbox",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Jet Set Radio Future",system:"Xbox",base:42,rarity:"Uncommon",minM:0.6,maxM:3.6},
+  {name:"Panzer Dragoon Orta",system:"Xbox",base:65,rarity:"Rare",minM:0.8,maxM:5.0},
+  {name:"Seaman",system:"Dreamcast",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  // Saturn
+  {name:"Panzer Dragoon",system:"Saturn",base:65,rarity:"Rare",minM:0.8,maxM:5.0},
+  {name:"Virtua Fighter",system:"Saturn",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Daytona USA",system:"Saturn",base:30,rarity:"Uncommon",minM:0.4,maxM:2.8},
+  {name:"Sonic 3D Blast",system:"Saturn",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Burning Rangers",system:"Saturn",base:80,rarity:"Rare",minM:1.0,maxM:6.0},
+  // Dreamcast
+  {name:"Shenmue",system:"Dreamcast",base:70,rarity:"Rare",minM:0.9,maxM:5.5},
+  {name:"Crazy Taxi",system:"Dreamcast",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"Sonic Adventure",system:"Dreamcast",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Soul Calibur",system:"Dreamcast",base:45,rarity:"Uncommon",minM:0.6,maxM:3.8},
+  {name:"Marvel vs Capcom",system:"Dreamcast",base:50,rarity:"Uncommon",minM:0.6,maxM:4.0},
+  // Atari
+  {name:"Pac-Man",system:"Atari 2600",base:20,rarity:"Common",minM:0.3,maxM:2.0},
+  {name:"Space Invaders",system:"Atari 2600",base:22,rarity:"Common",minM:0.3,maxM:2.2},
+  {name:"Asteroids",system:"Atari 2600",base:20,rarity:"Common",minM:0.3,maxM:2.0},
+  {name:"Adventure",system:"Atari 2600",base:25,rarity:"Common",minM:0.3,maxM:2.5},
+  {name:"E.T.",system:"Atari 2600",base:5,rarity:"Common",minM:0.1,maxM:0.5},
+  // Commodore
+  {name:"Lemmings",system:"Commodore 64",base:35,rarity:"Uncommon",minM:0.5,maxM:3.0},
+  {name:"The Last Ninja",system:"Commodore 64",base:40,rarity:"Uncommon",minM:0.5,maxM:3.5},
+  {name:"Impossible Mission",system:"Commodore 64",base:38,rarity:"Uncommon",minM:0.5,maxM:3.3},
+  {name:"Ghouls N Ghosts",system:"Commodore 64",base:42,rarity:"Uncommon",minM:0.6,maxM:3.6},
+  // Arcade
+  {name:"Arcade Cabinet Q-Bert",system:"Arcade",base:150,rarity:"Very Rare",minM:1.5,maxM:8.0},
+  {name:"Arcade Cabinet Donkey Kong",system:"Arcade",base:2000,rarity:"Grail",minM:2.0,maxM:12.0},
+  {name:"Arcade Cabinet Pacman",system:"Arcade",base:1500,rarity:"Grail",minM:1.8,maxM:10.0},
+  // Handhelds
+  {name:"Game and Watch Mickey Mouse",system:"Game and Watch",base:100,rarity:"Very Rare",minM:1.2,maxM:7.0},
+  {name:"Game and Watch Football",system:"Game and Watch",base:90,rarity:"Very Rare",minM:1.1,maxM:6.5},
+  {name:"Virtual Boy Mario's Mine",system:"Virtual Boy",base:120,rarity:"Very Rare",minM:1.3,maxM:7.5}
+];
+
+// Venues
+const VENUES = {
+  ebay: {name:"eBay",unlock:0,minNetWorth:0,costMult:0,dailyOH:0,apCost:1,buyFee:0.08,sellFee:0.08},
+  yardSale: {name:"Yard Sale",unlock:500,minNetWorth:500,costMult:0,dailyOH:0,apCost:1,buyFee:0,sellFee:0,buyPremium:-0.5},
+  fleaMarket: {name:"Flea Market",unlock:3000,minNetWorth:3000,costMult:0,dailyOH:0,apCost:2,buyFee:0,sellFee:15,buyPremium:0.15},
+  smallCon: {name:"Small Convention",unlock:10000,minNetWorth:10000,costMult:75,dailyOH:0,apCost:3,buyFee:0,sellFee:75,sellPremium:0.35},
+  bigCon: {name:"Big Convention",unlock:30000,minNetWorth:30000,costMult:200,dailyOH:0,apCost:3,buyFee:0,sellFee:200,sellPremium:0.60},
+  store: {name:"Retro Game Store",unlock:60000,minNetWorth:60000,costMult:0,dailyOH:200,apCost:1,consignmentCut:0.20}
+};
+
+// Upgrades - unlockNW = net worth required, unlockDay = min day required
+const UPGRADES = [
+  {id:"shelf",name:"Closet Shelf",cost:75,slots:5,unlockNW:0,unlockDay:0,desc:"+5 inventory slots"},
+  {id:"bookcase",name:"Bookcase",cost:200,slots:10,unlockNW:0,unlockDay:3,desc:"+10 inventory slots"},
+  {id:"auth",name:"Authenticator",cost:400,slots:0,unlockNW:500,unlockDay:0,desc:"Detect fake games before buying"},
+  {id:"resurfacer",name:"Disc Resurfacer",cost:350,slots:0,unlockNW:500,unlockDay:0,desc:"Fix scratched discs (+1 AP)"},
+  {id:"bins",name:"Storage Bins",cost:500,slots:15,unlockNW:0,unlockDay:5,desc:"+15 inventory slots"},
+  {id:"cleaning",name:"Cleaning Kit",cost:150,slots:0,unlockNW:0,unlockDay:5,desc:"Clean Loose games +15% value"},
+  {id:"display",name:"Display Cases",cost:800,slots:0,unlockNW:3000,unlockDay:0,desc:"+10% sell price at conventions"},
+  {id:"priceguide",name:"Price Guide Sub",cost:500,slots:0,unlockNW:1000,unlockDay:0,desc:"See book value on items"},
+  {id:"small-unit",name:"Small Storage Unit",cost:1500,slots:30,unlockNW:2000,unlockDay:10,desc:"+30 inventory slots"},
+  {id:"grading",name:"Grading Service Sub",cost:2000,slots:0,unlockNW:10000,unlockDay:0,desc:"Submit games for Graded condition"},
+  {id:"shipping",name:"Shipping Supplies Pro",cost:600,slots:0,unlockNW:1000,unlockDay:5,desc:"eBay shipping 1 day (vs 2)"},
+  {id:"large-unit",name:"Large Storage Unit",cost:4000,slots:50,unlockNW:5000,unlockDay:20,desc:"+50 inventory slots"},
+  {id:"website",name:"Website/Social Media",cost:3000,slots:0,unlockNW:8000,unlockDay:15,desc:"+5% all sell prices"},
+  {id:"warehouse",name:"Warehouse Space",cost:12000,slots:100,unlockNW:20000,unlockDay:40,desc:"+100 inventory slots"}
+];
+
+// Events
+const NEGATIVE_EVENTS = [
+  {name:"Robbery",icon:"🔓",prob:0.08,action:()=>robberySell={text:"Thieves broke in! Lose 2-5 games and some cash.",loss:Math.floor(Math.random()*4)+2}},
+  {name:"Storage Flood",icon:"💧",prob:0.06,action:()=>floodSell={text:"Water damage! Lose 20-40% of inventory.",loss:Math.floor(Math.random()*20)+20}},
+  {name:"eBay Suspension",icon:"⛔",prob:0.05,action:()=>ebayBan=3},
+  {name:"Car Breakdown",icon:"🚗",prob:0.06,action:()=>carBroken=2},
+  {name:"Shipping Lost",icon:"📦",prob:0.04,action:()=>lostShip={text:"eBay sale lost in shipping. Refund issued.",loss:Math.floor(Math.random()*500)+100}},
+  {name:"Price Crash",icon:"📉",prob:0.05,action:()=>priceCrash={text:"Prices for random system tank 30-50%.",text2:"Check your inventory!"}}
+];
+
+const POSITIVE_EVENTS = [
+  {name:"Viral TikTok",icon:"📱",prob:0.08,action:()=>viralEvent={text:"One of your listings went viral! +50% value for one system."}},
+  {name:"Collector Contact",icon:"🤝",prob:0.06,action:()=>collectorEvent={text:"Rich collector wants to buy! +100% value for one system."}},
+  {name:"Estate Sale Tip",icon:"🏡",prob:0.05,action:()=>estateSale={text:"Insider tip: Estate sale tomorrow with premium finds!"}},
+  {name:"Convention VIP",icon:"🎟️",prob:0.06,action:()=>convVIP={text:"Free booth at next convention!"}}
+];
+
+// =============================================================================
+// GAME STATE
+// =============================================================================
+
+let conRefreshTimer = null;
+
+let gameState = {
+  screenName: 'title',
+  gameLength: 'standard',
+  playerName: 'Player',
+  day: 1,
+  maxDays: 60,
+  ap: AP_PER_DAY,
+  maxAp: AP_PER_DAY,
+  cash: 0,
+  bank: 0,
+  debt: 0,
+  inventory: [],
+  inventorySlots: BASE_INVENTORY_SLOTS,
+  reputation: 50,
+  news: "Welcome to Game Wars: Reseller's Journey!",
+  currentView: 'ebay-buy',
+
+  // Owned upgrades
+  upgrades: {},
+
+  // Pending transactions
+  pendingSales: [],
+  incomingShipments: [],
+
+  // Venue unlocks
+  unlockedVenues: {ebay: true},
+  ownedStore: false,
+  storeConsignment: false,
+
+  // Events & bonuses
+  ebayBan: 0,
+  carBroken: 0,
+  bonusAP: 0,
+  fleaBoothPaid: false,
+  sellingAtFlea: false,
+  currentListings: null,
+  totalProfit: 0,
+  gamesSold: 0,
+  marketMultiplier: 1.0, // Daily sell price variance (0.85-1.15)
+  sellingAtCon: false,
+  conBoothPaid: false,
+  conType: null, // 'small' or 'big'
+
+  // Calendar
+  nextYardSale: 5,
+  nextFleaMarket: 3,
+  nextSmallCon: 7,
+  nextBigCon: 14,
+
+  // Event multiplier for difficulty
+  eventMult: 1.0
+};
+
+// =============================================================================
+// SCREEN FUNCTIONS
+// =============================================================================
+
+function showScreen(screenName) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenName + '-screen').classList.add('active');
+  gameState.screenName = screenName;
+}
+
+function selectLength(length) {
+  const preset = PRESETS[length];
+  gameState.gameLength = length;
+  gameState.maxDays = preset.days;
+  gameState.eventMult = preset.eventMult;
+
+  // Generate starting inventory
+  generateStartingInventory(preset.startGames);
+
+  showScreen('name');
+  document.getElementById('name-input').focus();
+}
+
+function generateStartingInventory(count) {
+  gameState.inventory = [];
+  for (let i = 0; i < count; i++) {
+    const game = GAME_CATALOG[Math.floor(Math.random() * GAME_CATALOG.length)];
+    const rarity = Math.random();
+    let selectedRarity = game.rarity;
+
+    // Weighted distribution
+    if (rarity < 0.55) selectedRarity = "Common"; // 55%
+    else if (rarity < 0.85) selectedRarity = "Uncommon"; // 30%
+    else if (rarity < 0.95) selectedRarity = "Rare"; // 10%
+    else if (rarity < 0.99) selectedRarity = "Very Rare"; // 4%
+    else selectedRarity = "Grail"; // 1%
+
+    const item = {
+      id: generateId(),
+      name: game.name,
+      system: game.system,
+      baseValue: game.base,
+      rarity: selectedRarity,
+      condition: "Loose",
+      acquired: "starting"
+    };
+    gameState.inventory.push(item);
+  }
+}
+
+function submitName() {
+  const name = document.getElementById('name-input').value.trim();
+  if (!name) {
+    showNotification("Enter a name!", 'error');
+    return;
+  }
+  gameState.playerName = name;
+  showScreen('intro');
+  updateIntroScreen();
+}
+
+function updateIntroScreen() {
+  const preset = PRESETS[gameState.gameLength];
+  const games = gameState.inventory.length;
+  const text = `
+    <p>Welcome, <span class="highlight">${gameState.playerName}</span>!</p>
+    <p style="margin: 16px 0;">Your collection is sitting in your bedroom. Time to turn it into cash.</p>
+    <p style="margin: 16px 0;">You're starting with <span class="highlight">${games} childhood games</span> and <span class="highlight">$0</span> to your name.</p>
+    <p style="margin: 16px 0;">Your first move: <span class="em">List some games on eBay</span>. It's free and always available.</p>
+    <p style="margin: 16px 0;">But payments take 2 days to arrive... so plan ahead!</p>
+    <p style="margin: 16px 0;">As your wealth grows, new venues unlock. <span class="highlight">Yard sales</span> have amazing deals but sketchy sellers. <span class="highlight">Flea markets</span> let you buy AND sell. <span class="highlight">Conventions</span> unlock at $10k net worth.</p>
+    <p style="margin: 16px 0;">The ultimate goal? <span class="warning">Own a retro game store</span> for $150,000. But first, you gotta climb the ladder.</p>
+    <p style="margin: 16px 0;"><span class="warning">Warning:</span> Fakes are real. Discs get scratched. Events happen. Manage your inventory and reputation!</p>
+    <p style="margin: 16px 0;">You have <span class="highlight">${gameState.maxDays} days</span> to build an empire.</p>
+  `;
+  document.getElementById('intro-text').innerHTML = text;
+}
+
+function startGame() {
+  gameState.day = 1;
+  gameState.ap = AP_PER_DAY;
+  gameState.currentView = 'ebay-buy';
+  gameState.cash = 0;
+  gameState.bank = 0;
+  gameState.debt = 0;
+  gameState.reputation = 50;
+
+  showScreen('game');
+  updateGameScreen();
+}
+
+// =============================================================================
+// GAME LOOP & UPDATES
+// =============================================================================
+
+function updateGameScreen() {
+  updateHeader();
+  updateSidebar();
+  switchView(gameState.currentView);
+}
+
+function updateHeader() {
+  document.getElementById('hdr-day').textContent = `${gameState.day}/${gameState.maxDays}`;
+  document.getElementById('hdr-ap').textContent = `${gameState.ap}/${AP_PER_DAY}`;
+  document.getElementById('hdr-cash').textContent = '$' + gameState.cash;
+  document.getElementById('hdr-debt').textContent = '$' + gameState.debt;
+  document.getElementById('hdr-bank').textContent = '$' + gameState.bank;
+
+  const pending = gameState.pendingSales.reduce((sum, s) => sum + s.amount, 0);
+  document.getElementById('hdr-pending').textContent = '$' + pending;
+
+  const netWorth = gameState.cash + gameState.bank - gameState.debt + getInventoryValue();
+  document.getElementById('hdr-net').textContent = '$' + Math.max(0, netWorth);
+}
+
+function updateSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const netWorth = gameState.cash + gameState.bank - gameState.debt + getInventoryValue();
+
+  let html = `<h3>STATS</h3>
+  <div class="sidebar-section">
+    <div class="stat-row"><span>Cash:</span><span class="stat-cash">$${gameState.cash}</span></div>
+    <div class="stat-row"><span>Bank:</span><span class="stat-bank">$${gameState.bank}</span></div>
+    <div class="stat-row"><span>Debt:</span><span class="stat-debt">$${gameState.debt}</span></div>
+    <div class="stat-row"><span>Net:</span><span class="stat-net">$${Math.max(0, netWorth)}</span></div>
+    <div class="stat-row"><span>Inventory:</span><span>${gameState.inventory.length}${gameState.incomingShipments.length > 0 ? ' (+' + gameState.incomingShipments.length + ' incoming)' : ''}/${gameState.inventorySlots}</span></div>
+    <div class="stat-row"><span>Rep:</span><span>${gameState.reputation}/100</span></div>
+  </div>
+
+  <h3>UPCOMING</h3>
+  <div class="sidebar-section calendar-widget">`;
+
+  const upcoming = [];
+  if (gameState.unlockedVenues.yardSale && gameState.nextYardSale - gameState.day >= -1) {
+    upcoming.push({days: gameState.nextYardSale - gameState.day, text: `Yard sale in ${Math.max(0, gameState.nextYardSale - gameState.day)} days`});
+  }
+  if (gameState.unlockedVenues.fleaMarket && gameState.nextFleaMarket - gameState.day >= -1) {
+    upcoming.push({days: gameState.nextFleaMarket - gameState.day, text: `Flea market in ${Math.max(0, gameState.nextFleaMarket - gameState.day)} days`});
+  }
+  if (gameState.unlockedVenues.smallCon && gameState.nextSmallCon - gameState.day >= -1) {
+    upcoming.push({days: gameState.nextSmallCon - gameState.day, text: `Small con in ${Math.max(0, gameState.nextSmallCon - gameState.day)} days`});
+  }
+  if (gameState.unlockedVenues.bigCon && gameState.nextBigCon - gameState.day >= -1) {
+    upcoming.push({days: gameState.nextBigCon - gameState.day, text: `Big con in ${Math.max(0, gameState.nextBigCon - gameState.day)} days`});
+  }
+
+  if (gameState.ebayBan > 0) {
+    upcoming.push({days: 0, text: `🚫 eBay banned ${gameState.ebayBan}d`, type: 'critical'});
+  }
+  if (gameState.carBroken > 0) {
+    upcoming.push({days: 0, text: `🚗 Car broken ${gameState.carBroken}d`, type: 'critical'});
+  }
+
+  upcoming.sort((a, b) => a.days - b.days);
+  upcoming.slice(0, 5).forEach(e => {
+    const cls = e.type === 'critical' ? 'critical' : (e.days <= 1 ? 'soon' : '');
+    html += `<div class="calendar-event ${cls}">${e.text}</div>`;
+  });
+
+  html += `</div><h3>PENDING SALES</h3><div class="sidebar-section">`;
+  if (gameState.pendingSales.length === 0) {
+    html += `<div class="stat-row" style="color: var(--dim);">None</div>`;
+  } else {
+    gameState.pendingSales.forEach(s => {
+      const daysLeft = s.arrivesDay - gameState.day;
+      html += `<div class="inv-item">${s.game.name} - $${s.amount} (${daysLeft > 0 ? daysLeft + 'd left' : 'arriving!'})</div>`;
+    });
+  }
+  html += `</div>`;
+
+  html += `<h3>INCOMING SHIPMENTS</h3><div class="sidebar-section">`;
+  if (!gameState.incomingShipments || gameState.incomingShipments.length === 0) {
+    html += `<div class="stat-row" style="color: var(--dim);">None</div>`;
+  } else {
+    gameState.incomingShipments.forEach(s => {
+      const daysLeft = s.arrivesDay - gameState.day;
+      html += `<div class="inv-item">${s.item.name} (${daysLeft > 0 ? daysLeft + 'd left' : 'arriving!'})</div>`;
+    });
+  }
+  html += `</div>`;
+
+  sidebar.innerHTML = html;
+}
+
+function switchView(view) {
+  // Clear convention auto-refresh if leaving convention view
+  if (conRefreshTimer) { clearInterval(conRefreshTimer); conRefreshTimer = null; }
+
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const activeTab = document.querySelector(`[data-view="${view}"]`);
+  if (activeTab) activeTab.classList.add('active');
+  gameState.currentView = view;
+
+  const viewArea = document.getElementById('view-area');
+  const actionBar = document.getElementById('action-bar');
+
+  viewArea.innerHTML = '';
+  actionBar.innerHTML = '';
+
+  // Update tab disabled states and styling
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.disabled = false;
+    tab.style.opacity = '1';
+
+    if (gameState.ebayBan > 0 && (tab.dataset.view === 'ebay-buy' || tab.dataset.view === 'ebay-sell')) {
+      tab.disabled = true;
+      tab.style.opacity = '0.4';
+    }
+    if (gameState.carBroken > 0 && (tab.dataset.view === 'yard-sale' || tab.dataset.view === 'flea-market')) {
+      tab.disabled = true;
+      tab.style.opacity = '0.4';
+    }
+  });
+
+  switch (view) {
+    case 'ebay-buy':
+      renderEbaybuyView(viewArea, actionBar);
+      break;
+    case 'ebay-sell':
+      renderEbaySellView(viewArea, actionBar);
+      break;
+    case 'yard-sale':
+      renderYardSaleView(viewArea, actionBar);
+      break;
+    case 'flea-market':
+      renderFleaMarketView(viewArea, actionBar);
+      break;
+    case 'convention':
+      renderConventionView(viewArea, actionBar);
+      break;
+    case 'inventory':
+      renderInventoryView(viewArea, actionBar);
+      break;
+    case 'upgrades':
+      renderUpgradesView(viewArea, actionBar);
+      break;
+    case 'bank':
+      renderBankView(viewArea, actionBar);
+      break;
+    case 'calendar':
+      renderCalendarView(viewArea, actionBar);
+      break;
+  }
+
+  updateHeader();
+}
+
+// =============================================================================
+// VIEW RENDERERS
+// =============================================================================
+
+function renderEbaybuyView(viewArea, actionBar) {
+  const title = document.createElement('div');
+  title.className = 'view-title';
+  title.textContent = 'eBay - Buy Games (1 AP)';
+  viewArea.appendChild(title);
+
+  if (gameState.ebayBan > 0) {
+    const p = document.createElement('p');
+    p.style.color = 'var(--red)';
+    p.textContent = `Your eBay account is suspended for ${gameState.ebayBan} more day(s). Come back later.`;
+    viewArea.appendChild(p);
+    actionBar.innerHTML = `<span class="info">eBay is currently unavailable.</span>`;
+    return;
+  }
+
+  const listings = generateEbayListings(8);
+  gameState.currentListings = listings;
+  const hasGuide = gameState.upgrades.priceguide;
+  const table = document.createElement('table');
+  table.className = 'game-table';
+  table.innerHTML = `<thead><tr><th>Game</th><th>System</th><th>Rarity</th><th>Cond</th><th>Price</th>${hasGuide ? '<th>Book</th>' : ''}<th>Deal</th></tr></thead><tbody></tbody>`;
+
+  listings.forEach((listing, idx) => {
+    const tr = document.createElement('tr');
+    tr.dataset.index = idx;
+    const deal = getDealRating(listing.price / listing.bookValue);
+    const rClass = getRarityClass(listing.rarity);
+    tr.innerHTML = `<td>${listing.name}</td><td>${listing.system}</td><td class="rarity-${rClass}">${listing.rarity}</td><td>${listing.condition}</td><td>$${listing.price}</td>${hasGuide ? '<td>$' + listing.bookValue + '</td>' : ''}<td class="deal-${deal}">${deal}</td>`;
+    tr.onclick = () => buyFromEbay(listing, tr);
+    table.querySelector('tbody').appendChild(tr);
+  });
+
+  viewArea.appendChild(table);
+
+  actionBar.innerHTML = `<span class="info">Click to buy. Item arrives in ${gameState.upgrades.shipping ? 1 : 2} days. eBay takes 8% fee on your sales.</span><button class="action-btn" onclick="switchView('ebay-buy')">Refresh Listings</button><button class="action-btn" onclick="endDay()" style="margin-left: auto;">End Day (SPACE)</button>`;
+}
+
+function renderEbaySellView(viewArea, actionBar) {
+  const isFlea = gameState.sellingAtFlea;
+  const title = document.createElement('div');
+  title.className = 'view-title';
+  title.textContent = isFlea ? 'Flea Market - Sell Your Games (1 AP each)' : 'eBay - Sell Your Games (1 AP)';
+  viewArea.appendChild(title);
+
+  if (!isFlea && gameState.ebayBan > 0) {
+    const p = document.createElement('p');
+    p.style.color = 'var(--red)';
+    p.textContent = `Your eBay account is suspended for ${gameState.ebayBan} more day(s). Come back later.`;
+    viewArea.appendChild(p);
+    actionBar.innerHTML = `<span class="info">eBay is currently unavailable.</span>`;
+    return;
+  }
+
+  if (gameState.inventory.length === 0) {
+    const p = document.createElement('p');
+    p.style.color = 'var(--dim)';
+    p.textContent = 'Your inventory is empty.';
+    viewArea.appendChild(p);
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'game-table';
+  const profitHeader = isFlea ? '<th>Sell Price</th>' : '<th>Est. Value</th><th>Arrives</th>';
+  table.innerHTML = `<thead><tr><th>Game</th><th>System</th><th>Condition</th>${profitHeader}<th></th></tr></thead><tbody></tbody>`;
+
+  gameState.inventory.forEach((item, idx) => {
+    const tr = document.createElement('tr');
+    const baseValue = getGameValue(item);
+
+    if (isFlea) {
+      const sellValue = Math.floor(baseValue * 1.15);
+      const profit = sellValue - (item.buyPrice || 0);
+      const profitColor = profit >= 0 ? 'var(--green)' : 'var(--red)';
+      tr.innerHTML = `<td>${item.name}</td><td>${item.system}</td><td>${item.condition}</td><td>$${sellValue} <span style="color:${profitColor};font-size:0.7rem">(${profit >= 0 ? '+' : ''}$${profit})</span></td><td><button class="action-btn success" onclick="sellItemAtFlea(${idx})">Sell</button></td>`;
+    } else {
+      const sellValue = Math.floor(baseValue * (1 - EBAY_FEE));
+      const shippingTime = gameState.upgrades.shipping ? 1 : 2;
+      tr.innerHTML = `<td>${item.name}</td><td>${item.system}</td><td>${item.condition}</td><td>$${sellValue}</td><td>${shippingTime}d</td><td><button class="action-btn success" onclick="sellOnEbay(${idx})">Sell</button></td>`;
+    }
+    table.querySelector('tbody').appendChild(tr);
+  });
+
+  viewArea.appendChild(table);
+  if (isFlea) {
+    actionBar.innerHTML = `<span class="info">Selling at flea market — instant payment, +15% premium, no fees!</span><button class="action-btn" onclick="gameState.sellingAtFlea=false;switchView('flea-market')">Back to Flea Market</button><button class="action-btn" onclick="endDay()" style="margin-left: auto;">End Day (SPACE)</button>`;
+  } else {
+    actionBar.innerHTML = `<span class="info">Payment arrives in ${gameState.upgrades.shipping ? 1 : 2} days. eBay takes 8% fee.</span><button class="action-btn" onclick="endDay()" style="margin-left: auto;">End Day (SPACE)</button>`;
+  }
+}
+
+function renderYardSaleView(viewArea, actionBar) {
+  const title = document.createElement('div');
+  title.className = 'view-title';
+  title.textContent = 'Yard Sale - Buy Only (1 AP per item)';
+  viewArea.appendChild(title);
+
+  if (!gameState.unlockedVenues.yardSale) {
+    const p = document.createElement('p');
+    p.style.color = 'var(--red)';
+    p.textContent = `Unlock at $500 net worth. Current: $${gameState.cash + gameState.bank - gameState.debt + getInventoryValue()}`;
+    viewArea.appendChild(p);
+    return;
+  }
+
+  const nextIn = gameState.nextYardSale - gameState.day;
+  if (nextIn > 0) {
+    const p = document.createElement('p');
+    p.style.color = 'var(--yellow)';
+    p.textContent = `Next yard sale in ${nextIn} day(s). Check back then!`;
+    viewArea.appendChild(p);
+    return;
+  }
+
+  const listings = generateYardSaleListings(10);
+  gameState.currentListings = listings;
+  const hasGuide = gameState.upgrades.priceguide;
+  const table = document.createElement('table');
+  table.className = 'game-table';
+  table.innerHTML = `<thead><tr><th>Game</th><th>System</th><th>Price</th>${hasGuide ? '<th>Book Value</th>' : ''}<th>Deal</th></tr></thead><tbody></tbody>`;
+
+  listings.forEach((listing, idx) => {
+    const tr = document.createElement('tr');
+    const deal = getDealRating(listing.price / listing.bookValue);
+    let fakeTag = '';
+    if (listing.fake && !gameState.upgrades.auth) fakeTag = '<span class="fake-tag"> [?]</span>';
+    if (listing.fake && gameState.upgrades.auth) fakeTag = '<span class="fake-tag"> [FAKE]</span>';
+
+    tr.innerHTML = `<td>${listing.name}${fakeTag}</td><td>${listing.system}</td><td>$${listing.price}</td>${hasGuide ? '<td>$' + listing.bookValue + '</td>' : ''}<td class="deal-${deal}">${deal}</td>`;
+    if (!listing.fake || gameState.upgrades.auth) {
+      tr.onclick = () => buyFromYardSale(listing, tr);
+    }
+    table.querySelector('tbody').appendChild(tr);
+  });
+
+  viewArea.appendChild(table);
+  const yardBtn = document.createElement('button');
+  yardBtn.className = 'action-btn';
+  yardBtn.onclick = () => attendYardSale();
+  yardBtn.disabled = gameState.ap < 1;
+  yardBtn.textContent = `Refresh Yard Sale (1 AP, ${gameState.ap} left)`;
+  actionBar.appendChild(yardBtn);
+
+  const endBtn = document.createElement('button');
+  endBtn.className = 'action-btn';
+  endBtn.style.marginLeft = 'auto';
+  endBtn.onclick = () => endDay();
+  endBtn.textContent = 'End Day (SPACE)';
+  actionBar.appendChild(endBtn);
+}
+
+function renderFleaMarketView(viewArea, actionBar) {
+  const title = document.createElement('div');
+  title.className = 'view-title';
+  title.textContent = 'Flea Market (2-3 AP)';
+  viewArea.appendChild(title);
+
+  if (!gameState.unlockedVenues.fleaMarket) {
+    const p = document.createElement('p');
+    p.style.color = 'var(--red)';
+    p.textContent = `Unlock at $3,000 net worth. Current: $${gameState.cash + gameState.bank - gameState.debt + getInventoryValue()}`;
+    viewArea.appendChild(p);
+    return;
+  }
+
+  const nextIn = gameState.nextFleaMarket - gameState.day;
+  if (nextIn > 0) {
+    const p = document.createElement('p');
+    p.style.color = 'var(--yellow)';
+    p.textContent = `Next flea market in ${nextIn} day(s).`;
+    viewArea.appendChild(p);
+    return;
+  }
+
+  const listings = generateFleaMarketListings(12);
+  gameState.currentListings = listings;
+  const hasGuide = gameState.upgrades.priceguide;
+  const table = document.createElement('table');
+  table.className = 'game-table';
+  table.innerHTML = `<thead><tr><th>Game</th><th>System</th><th>Price</th>${hasGuide ? '<th>Book Value</th>' : ''}<th>Deal</th></tr></thead><tbody></tbody>`;
+
+  listings.forEach((listing, idx) => {
+    const tr = document.createElement('tr');
+    const deal = getDealRating(listing.price / listing.bookValue);
+    let fakeTag = '';
+    if (listing.fake && !gameState.upgrades.auth) fakeTag = '<span class="fake-tag"> [?]</span>';
+    if (listing.fake && gameState.upgrades.auth) fakeTag = '<span class="fake-tag"> [FAKE]</span>';
+
+    tr.innerHTML = `<td>${listing.name}${fakeTag}</td><td>${listing.system}</td><td>$${listing.price}</td>${hasGuide ? '<td>$' + listing.bookValue + '</td>' : ''}<td class="deal-${deal}">${deal}</td>`;
+    if (!listing.fake || gameState.upgrades.auth) {
+      tr.onclick = () => buyFromFleaMarket(listing, tr);
+    }
+    table.querySelector('tbody').appendChild(tr);
+  });
+
+  viewArea.appendChild(table);
+
+  const buyBtn = document.createElement('button');
+  buyBtn.className = 'action-btn success';
+  buyBtn.disabled = gameState.ap < 2 || !gameState.unlockedVenues.fleaMarket;
+  buyBtn.onclick = () => {gameState.ap -= 2; switchView('flea-market');};
+  buyBtn.textContent = `Buy (2 AP)`;
+  actionBar.appendChild(buyBtn);
+
+  const sellBtn = document.createElement('button');
+  sellBtn.className = 'action-btn success';
+  sellBtn.disabled = gameState.ap < 1 || gameState.inventory.length === 0;
+  sellBtn.onclick = () => sellAtFleaMarket();
+  sellBtn.textContent = gameState.fleaBoothPaid ? `Sell Items (1 AP each)` : `Sell ($15 booth + 1 AP each)`;
+  actionBar.appendChild(sellBtn);
+
+  const endBtn = document.createElement('button');
+  endBtn.className = 'action-btn';
+  endBtn.style.marginLeft = 'auto';
+  endBtn.onclick = () => endDay();
+  endBtn.textContent = 'End Day (SPACE)';
+  actionBar.appendChild(endBtn);
+}
+
+function renderConventionView(viewArea, actionBar) {
+  const title = document.createElement('div');
+  title.className = 'view-title';
+  title.textContent = 'Conventions';
+  viewArea.appendChild(title);
+
+  const netWorth = gameState.cash + gameState.bank - gameState.debt + getInventoryValue();
+
+  // If currently at a convention (booth paid), show buy/sell interface
+  if (gameState.conBoothPaid) {
+    renderConventionShopView(viewArea, actionBar);
+    return;
+  }
+
+  // Small Convention
+  const smallConCard = document.createElement('div');
+  const smallConDaysLeft = gameState.nextSmallCon - gameState.day;
+  const smallConAvailable = gameState.unlockedVenues.smallCon && smallConDaysLeft <= 0;
+  smallConCard.className = 'venue-card' + (!gameState.unlockedVenues.smallCon ? ' locked' : '') + (smallConAvailable ? ' current' : '');
+  smallConCard.innerHTML = `<div class="venue-name">Small Convention</div>
+    <div class="venue-desc">Local retro gaming convention. Wide selection of dealers and collectors.</div>
+    <div class="venue-stats">Booth fee: $75 | Sell premium: +35% | 15-20 items | 5% fakes</div>`;
+  if (!gameState.unlockedVenues.smallCon) {
+    smallConCard.innerHTML += `<div class="venue-unlock">Unlock at $10,000 net worth (Current: $${netWorth})</div>`;
+  } else if (smallConDaysLeft > 0) {
+    smallConCard.innerHTML += `<div class="venue-unlock" style="color:var(--yellow)">Next convention in ${smallConDaysLeft} day(s)</div>`;
+  } else {
+    smallConCard.innerHTML += `<div class="venue-unlock" style="color:var(--green)">Convention happening TODAY! Click to attend ($75 booth — get 6 AP at the event!)</div>`;
+    smallConCard.onclick = () => attendSmallCon();
+    smallConCard.style.cursor = 'pointer';
+  }
+  viewArea.appendChild(smallConCard);
+
+  // Big Convention
+  const bigConCard = document.createElement('div');
+  const bigConDaysLeft = gameState.nextBigCon - gameState.day;
+  const bigConAvailable = gameState.unlockedVenues.bigCon && bigConDaysLeft <= 0;
+  bigConCard.className = 'venue-card' + (!gameState.unlockedVenues.bigCon ? ' locked' : '') + (bigConAvailable ? ' current' : '');
+  bigConCard.innerHTML = `<div class="venue-name">Big Convention</div>
+    <div class="venue-desc">Major regional retro gaming expo. Top dealers, rare items, premium collectors.</div>
+    <div class="venue-stats">Booth fee: $200 | Sell premium: +60% | 20-25 items, Rare+ | 2% fakes</div>`;
+  if (!gameState.unlockedVenues.bigCon) {
+    bigConCard.innerHTML += `<div class="venue-unlock">Unlock at $30,000 net worth (Current: $${netWorth})</div>`;
+  } else if (bigConDaysLeft > 0) {
+    bigConCard.innerHTML += `<div class="venue-unlock" style="color:var(--yellow)">Next convention in ${bigConDaysLeft} day(s)</div>`;
+  } else {
+    bigConCard.innerHTML += `<div class="venue-unlock" style="color:var(--green)">Convention happening TODAY! Click to attend ($200 booth — get 8 AP at the event!)</div>`;
+    bigConCard.onclick = () => attendBigCon();
+    bigConCard.style.cursor = 'pointer';
+  }
+  viewArea.appendChild(bigConCard);
+
+  actionBar.innerHTML = `<span class="info">Conventions happen every 7-14 days. Check calendar for next event!</span><button class="action-btn" onclick="endDay()" style="margin-left: auto;">End Day (SPACE)</button>`;
+}
+
+function renderConventionShopView(viewArea, actionBar) {
+  const conName = gameState.conType === 'big' ? 'Big Convention' : 'Small Convention';
+  const sellPremium = gameState.conType === 'big' ? 0.60 : 0.35;
+  const displayBonus = gameState.upgrades.display ? 0.10 : 0;
+
+  const subtitle = document.createElement('div');
+  subtitle.className = 'view-title';
+  subtitle.textContent = `${conName} - Browse & Sell`;
+  viewArea.appendChild(subtitle);
+
+  // Buy section
+  const buyHeader = document.createElement('h3');
+  buyHeader.style.cssText = 'color:var(--cyan);margin:12px 0 8px;font-size:0.95rem';
+  buyHeader.textContent = 'Dealers (Buy)';
+  viewArea.appendChild(buyHeader);
+
+  const count = gameState.conType === 'big' ? (20 + Math.floor(Math.random() * 6)) : (15 + Math.floor(Math.random() * 6));
+  const fakeRate = gameState.conType === 'big' ? 0.02 : 0.05;
+  const listings = generateConventionListings(count, fakeRate, gameState.conType === 'big');
+  gameState.currentListings = listings;
+
+  const hasGuide = gameState.upgrades.priceguide;
+  const table = document.createElement('table');
+  table.className = 'game-table';
+  table.innerHTML = `<thead><tr><th>Game</th><th>System</th><th>Rarity</th><th>Cond</th><th>Price</th>${hasGuide ? '<th>Book</th>' : ''}<th>Deal</th></tr></thead><tbody></tbody>`;
+
+  listings.forEach((listing, idx) => {
+    const tr = document.createElement('tr');
+    const deal = getDealRating(listing.price / listing.bookValue);
+    let fakeTag = '';
+    if (listing.fake && !gameState.upgrades.auth) fakeTag = '<span class="fake-tag"> [?]</span>';
+    if (listing.fake && gameState.upgrades.auth) fakeTag = '<span class="fake-tag"> [FAKE]</span>';
+    const rClass = getRarityClass(listing.rarity);
+
+    tr.innerHTML = `<td>${listing.name}${fakeTag}</td><td>${listing.system}</td><td class="rarity-${rClass}">${listing.rarity}</td><td>${listing.condition}</td><td>$${listing.price}</td>${hasGuide ? '<td>$' + listing.bookValue + '</td>' : ''}<td class="deal-${deal}">${deal}</td>`;
+    if (!listing.fake || gameState.upgrades.auth) {
+      tr.onclick = () => buyAtConvention(listing, tr);
+    }
+    table.querySelector('tbody').appendChild(tr);
+  });
+  viewArea.appendChild(table);
+
+  // Sell section
+  if (gameState.inventory.length > 0) {
+    const sellHeader = document.createElement('h3');
+    sellHeader.style.cssText = 'color:var(--green);margin:16px 0 8px;font-size:0.95rem';
+    sellHeader.textContent = `Your Booth - Sell (+${Math.round((sellPremium + displayBonus) * 100)}% premium, 1 AP each)`;
+    viewArea.appendChild(sellHeader);
+
+    const sellTable = document.createElement('table');
+    sellTable.className = 'game-table';
+    sellTable.innerHTML = `<thead><tr><th>Game</th><th>System</th><th>Cond</th><th>Sell Price</th><th>Profit</th><th></th></tr></thead><tbody></tbody>`;
+
+    gameState.inventory.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+      const baseValue = getGameValue(item);
+      const sellValue = Math.floor(baseValue * (1 + sellPremium + displayBonus));
+      const profit = sellValue - (item.buyPrice || 0);
+      const profitColor = profit >= 0 ? 'var(--green)' : 'var(--red)';
+      tr.innerHTML = `<td>${item.name}</td><td>${item.system}</td><td>${item.condition}</td><td>$${sellValue}</td><td style="color:${profitColor}">${profit >= 0 ? '+' : ''}$${profit}</td><td><button class="action-btn success" onclick="sellAtConvention(${idx})">Sell</button></td>`;
+      sellTable.querySelector('tbody').appendChild(tr);
+    });
+    viewArea.appendChild(sellTable);
+  }
+
+  actionBar.innerHTML = `<span class="info">${conName} — buy from dealers or sell from your booth! 1 AP per transaction. New booths every 5s!</span><button class="action-btn" onclick="endDay()" style="margin-left: auto;">End Day (SPACE)</button>`;
+
+  // Auto-refresh dealer listings every 5 seconds (walking to new booths)
+  if (conRefreshTimer) clearInterval(conRefreshTimer);
+  conRefreshTimer = setInterval(() => {
+    if (!gameState.conBoothPaid || gameState.currentView !== 'convention') {
+      clearInterval(conRefreshTimer);
+      conRefreshTimer = null;
+      return;
+    }
+    showNotification("Walking to new booths...", 'info');
+    switchView('convention');
+  }, 5000);
+}
+
+function renderInventoryView(viewArea, actionBar) {
+  const title = document.createElement('div');
+  title.className = 'view-title';
+  title.textContent = `Inventory (${gameState.inventory.length}/${gameState.inventorySlots} slots)`;
+  viewArea.appendChild(title);
+
+  if (gameState.inventory.length === 0) {
+    const p = document.createElement('p');
+    p.style.color = 'var(--dim)';
+    p.textContent = 'Your inventory is empty.';
+    viewArea.appendChild(p);
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'game-table';
+  table.innerHTML = `<thead><tr><th>Game</th><th>System</th><th>Rarity</th><th>Condition</th><th>Value</th></tr></thead><tbody></tbody>`;
+
+  gameState.inventory.forEach((item, idx) => {
+    const tr = document.createElement('tr');
+    const value = getGameValue(item);
+    const rClass = getRarityClass(item.rarity);
+    tr.innerHTML = `<td>${item.name}</td><td>${item.system}</td><td class="rarity-${rClass}">${item.rarity}</td><td>${item.condition}</td><td>$${value}</td>`;
+    table.querySelector('tbody').appendChild(tr);
+  });
+
+  viewArea.appendChild(table);
+  const invValue = getInventoryValue();
+  actionBar.innerHTML = `<span class="info">Total inventory value: $${invValue}</span><button class="action-btn" onclick="endDay()">End Day (SPACE)</button>`;
+}
+
+function renderUpgradesView(viewArea, actionBar) {
+  const title = document.createElement('div');
+  title.className = 'view-title';
+  title.textContent = 'Upgrades';
+  viewArea.appendChild(title);
+
+  const grid = document.createElement('div');
+  grid.className = 'upgrade-grid';
+
+  const netWorth = gameState.cash + gameState.bank - gameState.debt + getInventoryValue();
+  UPGRADES.forEach(upgrade => {
+    const meetsNW = netWorth >= (upgrade.unlockNW || 0);
+    const meetsDay = gameState.day >= (upgrade.unlockDay || 0);
+    const unlocked = meetsNW && meetsDay;
+    const owned = gameState.upgrades[upgrade.id];
+
+    const card = document.createElement('div');
+    card.className = `upgrade-card ${!unlocked ? 'locked' : ''} ${owned ? 'owned' : ''}`;
+    card.innerHTML = `<div class="upgrade-name">${upgrade.name}${owned ? ' ✓' : ''}</div><div class="upgrade-cost">$${upgrade.cost}</div><div class="upgrade-desc">${upgrade.desc}</div>`;
+
+    if (owned) {
+      card.style.opacity = '0.6';
+      card.style.cursor = 'default';
+    } else if (unlocked) {
+      card.onclick = () => purchaseUpgrade(upgrade.id);
+      card.style.cursor = 'pointer';
+    }
+
+    if (!unlocked) {
+      const reqs = [];
+      if (!meetsNW) reqs.push(`$${upgrade.unlockNW.toLocaleString()} net worth`);
+      if (!meetsDay) reqs.push(`Day ${upgrade.unlockDay}`);
+      card.innerHTML += `<div class="upgrade-desc" style="color: var(--red); margin-top: 8px;">Requires: ${reqs.join(' + ')}</div>`;
+    }
+
+    grid.appendChild(card);
+  });
+
+  viewArea.appendChild(grid);
+  actionBar.innerHTML = `<span class="info">Click to purchase upgrades. Storage upgrades increase inventory slots.</span><button class="action-btn" onclick="endDay()" style="margin-left: auto;">End Day (SPACE)</button>`;
+}
+
+function renderBankView(viewArea, actionBar) {
+  const title = document.createElement('div');
+  title.className = 'view-title';
+  title.textContent = 'Bank';
+  viewArea.appendChild(title);
+
+  const info = document.createElement('div');
+  info.innerHTML = `<p>Cash on hand: <span class="stat-cash">$${gameState.cash}</span></p><p>In bank: <span class="stat-bank">$${gameState.bank}</span></p><p>Outstanding debt: <span class="stat-debt">$${gameState.debt}</span></p><p style="margin-top: 12px;">Interest: 0.3% daily savings | 2% daily debt</p>`;
+  viewArea.appendChild(info);
+
+  const bankRow = document.createElement('div');
+  bankRow.className = 'bank-row';
+  bankRow.innerHTML = `<span>Deposit:</span><input type="number" id="deposit-amount" class="bank-input" min="0" max="${gameState.cash}" value=""><button class="action-btn success" onclick="depositBank()">Deposit</button>`;
+  viewArea.appendChild(bankRow);
+
+  const withdrawRow = document.createElement('div');
+  withdrawRow.className = 'bank-row';
+  withdrawRow.innerHTML = `<span>Withdraw:</span><input type="number" id="withdraw-amount" class="bank-input" min="0" max="${gameState.bank}" value=""><button class="action-btn success" onclick="withdrawBank()">Withdraw</button>`;
+  viewArea.appendChild(withdrawRow);
+
+  actionBar.innerHTML = `<span class="info">Bank is free (0 AP). Manage your cash flow.</span><button class="action-btn" onclick="endDay()" style="margin-left: auto;">End Day (SPACE)</button>`;
+}
+
+function renderCalendarView(viewArea, actionBar) {
+  const title = document.createElement('div');
+  title.className = 'view-title';
+  title.textContent = 'Calendar & Events';
+  viewArea.appendChild(title);
+
+  const events = [];
+  if (gameState.unlockedVenues.yardSale) {
+    events.push({day: gameState.nextYardSale, name: "Yard Sale", type: "venue"});
+  }
+  if (gameState.unlockedVenues.fleaMarket) {
+    events.push({day: gameState.nextFleaMarket, name: "Flea Market", type: "venue"});
+  }
+  if (gameState.unlockedVenues.smallCon) {
+    events.push({day: gameState.nextSmallCon, name: "Small Convention", type: "venue"});
+  }
+  if (gameState.unlockedVenues.bigCon) {
+    events.push({day: gameState.nextBigCon, name: "Big Convention", type: "venue"});
+  }
+
+  events.sort((a, b) => a.day - b.day);
+
+  const html = events.slice(0, 10).map(e => {
+    const daysUntil = e.day - gameState.day;
+    const status = daysUntil < 0 ? 'ACTIVE' : `in ${daysUntil}d`;
+    return `<div class="calendar-event">${e.name} - ${status}</div>`;
+  }).join('');
+
+  viewArea.innerHTML += html || 'No events scheduled.';
+  actionBar.innerHTML = `<span class="info">Events unlock as you progress through the game.</span><button class="action-btn" onclick="endDay()" style="margin-left: auto;">End Day (SPACE)</button>`;
+}
+
+// =============================================================================
+// ACTIONS
+// =============================================================================
+
+function generateEbayListings(count) {
+  const listings = [];
+  for (let i = 0; i < count; i++) {
+    const game = GAME_CATALOG[Math.floor(Math.random() * GAME_CATALOG.length)];
+    const condition = ['Loose','Loose','Loose','CIB','CIB','Sealed'][Math.floor(Math.random()*6)];
+    const condMult = CONDITION_MULT[condition] || 1.0;
+    const bookValue = Math.floor(game.base * condMult);
+    // Price varies 30%-150% of book value — creates real deals AND overpriced listings
+    const priceVariance = 0.3 + Math.random() * 1.2;
+    const price = Math.max(1, Math.floor(bookValue * priceVariance));
+
+    listings.push({
+      name: game.name,
+      system: game.system,
+      bookValue: bookValue,
+      rarity: game.rarity,
+      condition: condition,
+      price: price
+    });
+  }
+  return listings;
+}
+
+function generateYardSaleListings(count) {
+  const listings = [];
+  for (let i = 0; i < count; i++) {
+    const game = GAME_CATALOG[Math.floor(Math.random() * GAME_CATALOG.length)];
+    const condition = ['Loose','Loose','Loose','Loose','CIB'][Math.floor(Math.random()*5)];
+    const condMult = CONDITION_MULT[condition] || 1.0;
+    const bookValue = Math.floor(game.base * condMult);
+    // Yard sales: 10%-60% of book value — mostly steals and good deals
+    const priceVariance = 0.1 + Math.random() * 0.5;
+    const price = Math.max(1, Math.floor(bookValue * priceVariance));
+    const isFake = Math.random() < 0.15;
+    const isScratched = !isFake && ['PS1','PS2','PS3','GameCube','Dreamcast','Saturn','Xbox','Xbox 360'].includes(game.system) && Math.random() < 0.20;
+
+    listings.push({
+      name: game.name,
+      system: game.system,
+      bookValue: bookValue,
+      rarity: game.rarity,
+      condition: condition,
+      price: isFake ? Math.floor(price * 0.7) : price,
+      fake: isFake,
+      scratched: isScratched,
+      detectable: isFake && gameState.upgrades.auth
+    });
+  }
+  return listings;
+}
+
+function generateFleaMarketListings(count) {
+  const listings = [];
+  for (let i = 0; i < count; i++) {
+    const game = GAME_CATALOG[Math.floor(Math.random() * GAME_CATALOG.length)];
+    const condition = ['Loose','Loose','CIB','CIB','Sealed'][Math.floor(Math.random()*5)];
+    const condMult = CONDITION_MULT[condition] || 1.0;
+    const bookValue = Math.floor(game.base * condMult);
+    // Flea market: 40%-130% of book value — some deals, some fair, some overpriced
+    const priceVariance = 0.4 + Math.random() * 0.9;
+    const price = Math.max(1, Math.floor(bookValue * priceVariance));
+    const isFake = Math.random() < 0.10;
+
+    listings.push({
+      name: game.name,
+      system: game.system,
+      bookValue: bookValue,
+      rarity: game.rarity,
+      condition: condition,
+      price: isFake ? Math.floor(price * 0.7) : price,
+      fake: isFake,
+      detectable: isFake && gameState.upgrades.auth
+    });
+  }
+  return listings;
+}
+
+function buyFromEbay(listing, element) {
+  if (gameState.ap < 1) {
+    showNotification("Not enough AP!", 'error');
+    return;
+  }
+  if (gameState.cash < listing.price) {
+    showNotification("Not enough cash!", 'error');
+    return;
+  }
+  const pendingItems = gameState.incomingShipments ? gameState.incomingShipments.length : 0;
+  if (gameState.inventory.length + pendingItems >= gameState.inventorySlots) {
+    showNotification("Inventory full (including incoming shipments)!", 'error');
+    return;
+  }
+
+  gameState.cash -= listing.price;
+  gameState.ap -= 1;
+
+  // Item ships to you — arrives in 2 days (or 1 with shipping upgrade)
+  const shippingTime = gameState.upgrades.shipping ? 1 : 2;
+  gameState.incomingShipments.push({
+    item: {
+      id: generateId(),
+      name: listing.name,
+      system: listing.system,
+      baseValue: listing.bookValue,
+      rarity: listing.rarity,
+      condition: listing.condition,
+      buyPrice: listing.price,
+      acquired: "ebay"
+    },
+    arrivesDay: gameState.day + shippingTime
+  });
+
+  // Fluctuate some prices after purchase (market shifts)
+  fluctuatePrices();
+  showNotification(`Bought ${listing.name} for $${listing.price}!`, 'success');
+  switchView('ebay-buy');
+}
+
+function sellOnEbay(idx) {
+  if (gameState.ap < 1) {
+    showNotification("Not enough AP!", 'error');
+    return;
+  }
+
+  const item = gameState.inventory[idx];
+  const baseValue = getGameValue(item);
+  const sellValue = Math.floor(baseValue * (1 - EBAY_FEE));
+
+  gameState.inventory.splice(idx, 1);
+  gameState.ap -= 1;
+
+  const shippingDays = gameState.upgrades.shipping ? 1 : 2;
+  gameState.pendingSales.push({
+    game: item,
+    amount: sellValue,
+    arrivesDay: gameState.day + shippingDays
+  });
+
+  showNotification(`Listed ${item.name}. Payment arrives in ${shippingDays} days!`, 'success');
+  switchView('ebay-sell');
+}
+
+function buyFromYardSale(listing, element) {
+  if (gameState.ap < 1) {
+    showNotification("Need 1 AP!", 'error');
+    return;
+  }
+  if (gameState.cash < listing.price) {
+    showNotification("Not enough cash!", 'error');
+    return;
+  }
+  if (gameState.inventory.length >= gameState.inventorySlots) {
+    showNotification("Inventory full!", 'error');
+    return;
+  }
+
+  gameState.cash -= listing.price;
+  gameState.ap -= 1;
+
+  // Detect fakes if have authenticator
+  if (listing.fake && !gameState.upgrades.auth) {
+    // Will find out later when selling
+    gameState.news = "Got a potentially fake item at yard sale...";
+  }
+
+  gameState.inventory.push({
+    id: generateId(),
+    name: listing.name,
+    system: listing.system,
+    baseValue: listing.bookValue,
+    rarity: listing.rarity || "Unknown",
+    condition: listing.condition || "Loose",
+    buyPrice: listing.price,
+    acquired: "yard-sale",
+    isFake: listing.fake,
+    isScratched: listing.scratched
+  });
+
+  showNotification(`Bought ${listing.name} for $${listing.price}!`, 'success');
+  switchView('yard-sale');
+}
+
+function attendYardSale() {
+  if (gameState.ap < 1) {
+    showNotification("Need 1 AP!", 'error');
+    return;
+  }
+
+  // Check if can attend today
+  const netWorth = gameState.cash + gameState.bank - gameState.debt + getInventoryValue();
+  if (!gameState.unlockedVenues.yardSale && netWorth < 500) {
+    showNotification("Unlock at $500 net worth!", 'error');
+    return;
+  }
+
+  if (!gameState.unlockedVenues.yardSale) {
+    gameState.unlockedVenues.yardSale = true;
+    gameState.news = "Yard sales unlocked!";
+  }
+
+  gameState.nextYardSale = gameState.day + 5; // Next Saturday
+  switchView('yard-sale');
+}
+
+function buyFromFleaMarket(listing, element) {
+  if (gameState.ap < 2) {
+    showNotification("Need 2 AP for flea market!", 'error');
+    return;
+  }
+  if (gameState.cash < listing.price) {
+    showNotification("Not enough cash!", 'error');
+    return;
+  }
+  if (gameState.inventory.length >= gameState.inventorySlots) {
+    showNotification("Inventory full!", 'error');
+    return;
+  }
+
+  gameState.cash -= listing.price;
+  gameState.ap -= 2;
+
+  gameState.inventory.push({
+    id: generateId(),
+    name: listing.name,
+    system: listing.system,
+    baseValue: listing.bookValue,
+    rarity: listing.rarity,
+    condition: listing.condition || "Loose",
+    buyPrice: listing.price,
+    acquired: "flea-market",
+    isFake: listing.fake
+  });
+
+  showNotification(`Bought ${listing.name} for $${listing.price}!`, 'success');
+  switchView('flea-market');
+}
+
+function buyAtFleaMarket() {
+  if (gameState.ap < 2) {
+    showNotification("Need 2 AP!", 'error');
+    return;
+  }
+
+  const netWorth = gameState.cash + gameState.bank - gameState.debt + getInventoryValue();
+  if (!gameState.unlockedVenues.fleaMarket && netWorth < 3000) {
+    showNotification("Unlock at $3,000 net worth!", 'error');
+    return;
+  }
+
+  if (!gameState.unlockedVenues.fleaMarket) {
+    gameState.unlockedVenues.fleaMarket = true;
+    gameState.news = "Flea markets unlocked!";
+  }
+
+  gameState.nextFleaMarket = gameState.day + 3;
+  switchView('flea-market');
+}
+
+function sellAtFleaMarket() {
+  // First time selling at flea market this day: pay $15 booth fee
+  if (!gameState.fleaBoothPaid) {
+    if (gameState.cash < 15) {
+      showNotification("Need $15 booth fee!", 'error');
+      return;
+    }
+    gameState.cash -= 15;
+    gameState.fleaBoothPaid = true;
+    showNotification("Paid $15 booth fee! Now sell items for 1 AP each at +15% premium.", 'success');
+  }
+  // Show inventory for selling at flea market
+  gameState.sellingAtFlea = true;
+  switchView('ebay-sell'); // Reuse sell view with flea market pricing
+}
+
+function sellItemAtFlea(idx) {
+  if (gameState.ap < 1) {
+    showNotification("Need 1 AP to sell!", 'error');
+    return;
+  }
+  const item = gameState.inventory[idx];
+  const baseValue = getGameValue(item);
+  const sellValue = Math.floor(baseValue * 1.15); // 15% premium, no eBay fee
+
+  gameState.inventory.splice(idx, 1);
+  gameState.ap -= 1;
+  gameState.cash += sellValue;
+  gameState.totalProfit = (gameState.totalProfit || 0) + (sellValue - (item.buyPrice || 0));
+  gameState.gamesSold = (gameState.gamesSold || 0) + 1;
+
+  showNotification(`Sold ${item.name} for $${sellValue} at flea market!`, 'success');
+  switchView('ebay-sell');
+}
+
+function attendSmallCon() {
+  if (gameState.ap < 1) {
+    showNotification("Need at least 1 AP to travel to the convention!", 'error');
+    return;
+  }
+  if (gameState.cash < 75) {
+    showNotification("Need $75 booth fee!", 'error');
+    return;
+  }
+  const smallConDaysLeft = gameState.nextSmallCon - gameState.day;
+  if (smallConDaysLeft > 0) {
+    showNotification(`No convention today! Next in ${smallConDaysLeft} day(s).`, 'error');
+    return;
+  }
+
+  gameState.ap = 6; // Convention gives you 6 AP to spend at the event
+  gameState.cash -= 75;
+  gameState.conBoothPaid = true;
+  gameState.conType = 'small';
+  gameState.nextSmallCon = gameState.day + 7 + Math.floor(Math.random() * 7);
+
+  showNotification("Paid $75 booth! You have 6 AP to buy and sell at the convention.", 'success');
+  switchView('convention');
+}
+
+function attendBigCon() {
+  if (gameState.ap < 1) {
+    showNotification("Need at least 1 AP to travel to the convention!", 'error');
+    return;
+  }
+  if (gameState.cash < 200) {
+    showNotification("Need $200 booth fee!", 'error');
+    return;
+  }
+  const bigConDaysLeft = gameState.nextBigCon - gameState.day;
+  if (bigConDaysLeft > 0) {
+    showNotification(`No convention today! Next in ${bigConDaysLeft} day(s).`, 'error');
+    return;
+  }
+
+  gameState.ap = 8; // Big convention gives you 8 AP to spend at the event
+  gameState.cash -= 200;
+  gameState.conBoothPaid = true;
+  gameState.conType = 'big';
+  gameState.nextBigCon = gameState.day + 10 + Math.floor(Math.random() * 5);
+
+  showNotification("Paid $200 booth! You have 8 AP to buy and sell at the convention.", 'success');
+  switchView('convention');
+}
+
+function generateConventionListings(count, fakeRate, isBig) {
+  const listings = [];
+  for (let i = 0; i < count; i++) {
+    let game;
+    if (isBig) {
+      // Big cons have better rarity distribution
+      const filtered = GAME_CATALOG.filter(g => ['Rare','Very Rare','Grail'].includes(g.rarity));
+      game = Math.random() < 0.4 ? GAME_CATALOG[Math.floor(Math.random() * GAME_CATALOG.length)] : filtered[Math.floor(Math.random() * filtered.length)];
+    } else {
+      game = GAME_CATALOG[Math.floor(Math.random() * GAME_CATALOG.length)];
+    }
+    const condition = ['Loose','CIB','CIB','Sealed'][Math.floor(Math.random() * 4)];
+    const condMult = CONDITION_MULT[condition] || 1.0;
+    const bookValue = Math.floor(game.base * condMult);
+    // Convention dealer pricing: 50%-140% of book value
+    const priceVariance = 0.5 + Math.random() * 0.9;
+    const price = Math.max(1, Math.floor(bookValue * priceVariance));
+    const isFake = Math.random() < fakeRate;
+    listings.push({
+      name: game.name, system: game.system, bookValue: bookValue,
+      rarity: game.rarity, condition: condition,
+      price: isFake ? Math.floor(price * 0.6) : price,
+      fake: isFake, detectable: isFake && gameState.upgrades.auth
+    });
+  }
+  return listings;
+}
+
+function buyAtConvention(listing, element) {
+  if (gameState.ap < 1) {
+    showNotification("Need 1 AP to buy!", 'error');
+    return;
+  }
+  if (gameState.cash < listing.price) {
+    showNotification("Not enough cash!", 'error');
+    return;
+  }
+  if (gameState.inventory.length >= gameState.inventorySlots) {
+    showNotification("Inventory full!", 'error');
+    return;
+  }
+
+  gameState.cash -= listing.price;
+  gameState.ap -= 1;
+
+  const item = {
+    id: generateId(),
+    name: listing.name,
+    system: listing.system,
+    baseValue: listing.bookValue,
+    rarity: listing.rarity,
+    condition: listing.condition,
+    buyPrice: listing.price,
+    acquired: "convention"
+  };
+
+  // Convention buys go straight to inventory (no shipping)
+  if (listing.fake && !gameState.upgrades.auth) {
+    item.fake = true;
+    item.baseValue = 0;
+  }
+  gameState.inventory.push(item);
+
+  fluctuatePrices();
+  showNotification(`Bought ${listing.name} for $${listing.price}!`, 'success');
+  if (element) element.style.opacity = '0.3';
+  updateSidebar();
+}
+
+function sellAtConvention(idx) {
+  if (gameState.ap < 1) {
+    showNotification("Need 1 AP to sell!", 'error');
+    return;
+  }
+  const item = gameState.inventory[idx];
+  const baseValue = getGameValue(item);
+  const sellPremium = gameState.conType === 'big' ? 0.60 : 0.35;
+  const displayBonus = gameState.upgrades.display ? 0.10 : 0;
+  const sellValue = Math.floor(baseValue * (1 + sellPremium + displayBonus));
+
+  gameState.inventory.splice(idx, 1);
+  gameState.ap -= 1;
+  gameState.cash += sellValue;
+  gameState.totalProfit = (gameState.totalProfit || 0) + (sellValue - (item.buyPrice || 0));
+  gameState.gamesSold = (gameState.gamesSold || 0) + 1;
+
+  showNotification(`Sold ${item.name} for $${sellValue} at convention!`, 'success');
+  switchView('convention');
+}
+
+function purchaseUpgrade(upgradeId) {
+  const upgrade = UPGRADES.find(u => u.id === upgradeId);
+  if (!upgrade) return;
+
+  if (gameState.upgrades[upgradeId]) {
+    showNotification("Already owned!", 'error');
+    return;
+  }
+  if (gameState.cash < upgrade.cost) {
+    showNotification("Not enough cash!", 'error');
+    return;
+  }
+
+  gameState.cash -= upgrade.cost;
+  gameState.upgrades[upgradeId] = true;
+  gameState.inventorySlots += upgrade.slots || 0;
+
+  showNotification(`Purchased ${upgrade.name}!`, 'success');
+  switchView('upgrades');
+}
+
+function depositBank() {
+  const amount = parseInt(document.getElementById('deposit-amount').value) || 0;
+  if (amount <= 0 || amount > gameState.cash) {
+    showNotification("Invalid amount!", 'error');
+    return;
+  }
+  gameState.cash -= amount;
+  gameState.bank += amount;
+  document.getElementById('deposit-amount').value = '';
+  switchView('bank');
+}
+
+function withdrawBank() {
+  const amount = parseInt(document.getElementById('withdraw-amount').value) || 0;
+  if (amount <= 0 || amount > gameState.bank) {
+    showNotification("Invalid amount!", 'error');
+    return;
+  }
+  gameState.bank -= amount;
+  gameState.cash += amount;
+  document.getElementById('withdraw-amount').value = '';
+  switchView('bank');
+}
+
+function endDay() {
+  if (gameState.ap === AP_PER_DAY) {
+    showNotification("Do something before ending the day!", 'error');
+    return;
+  }
+
+  // Process pending sales (payments arriving)
+  let payments = 0;
+  gameState.pendingSales = gameState.pendingSales.filter(s => {
+    if (s.arrivesDay <= gameState.day) {
+      gameState.cash += s.amount;
+      payments += 1;
+      return false;
+    }
+    return true;
+  });
+
+  // Process incoming shipments (eBay purchases arriving)
+  let arrivals = 0;
+  gameState.incomingShipments = gameState.incomingShipments.filter(s => {
+    if (s.arrivesDay <= gameState.day) {
+      if (gameState.inventory.length < gameState.inventorySlots) {
+        gameState.inventory.push(s.item);
+        arrivals += 1;
+      } else {
+        // Overflow — item still arrives next day if no space
+        s.arrivesDay = gameState.day + 1;
+        return true;
+      }
+      return false;
+    }
+    return true;
+  });
+  if (arrivals > 0) {
+    gameState.news = (gameState.news ? gameState.news + ' | ' : '') + `${arrivals} eBay purchase(s) arrived!`;
+  }
+
+  // Process daily effects
+  gameState.bank = Math.floor(gameState.bank * 1.003); // 0.3% interest
+  if (gameState.debt > 0) {
+    gameState.debt = Math.floor(gameState.debt * 1.02); // 2% interest on debt
+  }
+  gameState.ebayBan = Math.max(0, gameState.ebayBan - 1);
+  gameState.carBroken = Math.max(0, gameState.carBroken - 1);
+
+  // Update store overhead
+  if (gameState.ownedStore) {
+    gameState.cash = Math.max(0, gameState.cash - 200);
+  }
+
+  // Advance calendar
+  gameState.nextYardSale--;
+  gameState.nextFleaMarket--;
+  gameState.nextSmallCon--;
+  gameState.nextBigCon--;
+
+  // Check venue unlocks
+  const netWorth = gameState.cash + gameState.bank - gameState.debt + getInventoryValue();
+  if (netWorth >= 500 && !gameState.unlockedVenues.yardSale) {
+    gameState.unlockedVenues.yardSale = true;
+    gameState.news = "Yard sales unlocked at $500 net worth!";
+  }
+  if (netWorth >= 3000 && !gameState.unlockedVenues.fleaMarket) {
+    gameState.unlockedVenues.fleaMarket = true;
+    gameState.news = "Flea markets unlocked at $3,000 net worth!";
+  }
+  if (netWorth >= 10000 && !gameState.unlockedVenues.smallCon) {
+    gameState.unlockedVenues.smallCon = true;
+    gameState.news = "Small conventions unlocked at $10,000 net worth!";
+  }
+  if (netWorth >= 30000 && !gameState.unlockedVenues.bigCon) {
+    gameState.unlockedVenues.bigCon = true;
+    gameState.news = "Big conventions unlocked at $30,000 net worth!";
+  }
+  if (netWorth >= 60000 && !gameState.storeConsignment) {
+    gameState.storeConsignment = true;
+    gameState.news = "Store consignment available at $60,000 net worth!";
+  }
+
+  // Random events
+  const eventRoll = Math.random();
+  if (eventRoll < (0.12 * gameState.eventMult)) {
+    // Trigger an event
+    const events = [
+      {name:"Ebay Ban",icon:"⛔",prob:0.05,action:()=> {gameState.ebayBan = 3; gameState.news="eBay banned your account for 3 days!"}},
+      {name:"Car Breaks",icon:"🚗",prob:0.05,action:()=> {gameState.carBroken = 2; gameState.news="Your car broke down for 2 days!"}},
+      {name:"Viral Item",icon:"📱",prob:0.08,action:()=> {gameState.reputation += 10; gameState.news="Your listing went viral! +10 rep"}},
+      {name:"Price Crash",icon:"📉",prob:0.05,action:()=> {gameState.news="System prices crashed 30-50%"}},
+      {name:"Great Find",icon:"🎁",prob:0.08,action:()=> {gameState.reputation += 5; gameState.news="Found an unexpected gem at a yard sale!"}},
+      {name:"Energy Drink",icon:"⚡",prob:0.07,action:()=> {gameState.bonusAP += 3; gameState.news="Grabbed some energy drinks! +1 bonus AP for 3 days!"}},
+      {name:"Collector Tips",icon:"💡",prob:0.06,action:()=> {gameState.reputation += 8; gameState.news="A veteran collector shared their secrets! +8 rep"}}
+    ];
+    const event = events[Math.floor(Math.random() * events.length)];
+    if (typeof event.action === 'function') event.action();
+  }
+
+  gameState.day++;
+  gameState.fleaBoothPaid = false;
+  gameState.sellingAtFlea = false;
+  gameState.sellingAtCon = false;
+  gameState.conBoothPaid = false;
+  gameState.conType = null;
+  gameState.currentListings = null;
+  gameState.marketMultiplier = 0.85 + Math.random() * 0.30; // 85%-115% daily market shift
+  // Base AP + bonus from energy drink event or upgrades
+  let bonusAP = 0;
+  if (gameState.bonusAP > 0) { bonusAP = 1; gameState.bonusAP--; }
+  if (gameState.reputation >= 80) bonusAP += 1; // High rep = extra hustle
+  gameState.ap = AP_PER_DAY + bonusAP;
+
+  if (gameState.day > gameState.maxDays) {
+    endGame();
+  } else {
+    updateGameScreen();
+  }
+}
+
+function triggerRandomEvent() {
+  const pool = Math.random() < 0.5 ? POSITIVE_EVENTS : NEGATIVE_EVENTS;
+  const event = pool[Math.floor(Math.random() * pool.length)];
+  showEventModal(event);
+}
+
+// Price fluctuation - after each buy/sell, some listings shift price slightly
+function fluctuatePrices() {
+  if (gameState.currentListings) {
+    gameState.currentListings.forEach(listing => {
+      const shift = 0.85 + Math.random() * 0.30; // 85%-115% shift
+      listing.price = Math.max(1, Math.floor(listing.price * shift));
+    });
+  }
+}
+
+// =============================================================================
+// UTILITIES
+// =============================================================================
+
+function getRarityClass(rarity) {
+  const map = {
+    'Common': 'C',
+    'Uncommon': 'U',
+    'Rare': 'R',
+    'Very Rare': 'V',
+    'Grail': 'G'
+  };
+  return map[rarity] || 'C';
+}
+
+function getDealRating(priceRatio) {
+  if (priceRatio < 0.4) return "STEAL";
+  if (priceRatio < 0.7) return "Good";
+  if (priceRatio < 0.95) return "Fair";
+  if (priceRatio < 1.3) return "High";
+  return "RIP";
+}
+
+function getGameValue(item) {
+  let baseValue = item.baseValue;
+  const condMult = CONDITION_MULT[item.condition] || 1.0;
+  let value = Math.floor(baseValue * condMult);
+
+  // Daily market fluctuation
+  value = Math.floor(value * (gameState.marketMultiplier || 1.0));
+
+  if (item.condition === "Loose" && gameState.upgrades.cleaning) {
+    value = Math.floor(value * 1.15);
+  }
+
+  if (gameState.upgrades.website) {
+    value = Math.floor(value * 1.05);
+  }
+
+  return value;
+}
+
+function getInventoryValue() {
+  return gameState.inventory.reduce((sum, item) => sum + getGameValue(item), 0);
+}
+
+function generateId() {
+  return Math.random().toString(36).substr(2, 9);
+}
+
+function showNotification(text, type = 'info') {
+  const notif = document.getElementById('notification');
+  notif.textContent = text;
+  notif.className = `notification show ${type}`;
+  setTimeout(() => notif.classList.remove('show'), 3000);
+}
+
+function showEventModal(event) {
+  const modal = document.getElementById('event-modal');
+  const box = document.getElementById('event-box');
+  box.innerHTML = `<div class="event-icon">${event.icon}</div><div class="event-name">${event.name}</div><div class="event-msg">${event.text}</div><button class="choice-btn" onclick="closeEventModal()">OK</button>`;
+  modal.classList.add('active');
+}
+
+function closeEventModal() {
+  document.getElementById('event-modal').classList.remove('active');
+}
+
+function showLeaderboardFromTitle() {
+  const scores = getLeaderboard();
+  let html = `<div style="text-align: center;"><h2 style="color: var(--cyan); margin-bottom: 20px;">LEADERBOARD</h2><table class="game-table" style="max-width: 500px; margin: 0 auto;"><thead><tr><th>Rank</th><th>Player</th><th>Net Worth</th></tr></thead><tbody>`;
+
+  scores.slice(0, 10).forEach((score, idx) => {
+    html += `<tr><td>#${idx + 1}</td><td>${score.name}</td><td>$${score.netWorth}</td></tr>`;
+  });
+
+  html += `</tbody></table><br><button class="menu-btn" onclick="showScreen('title')" style="margin-top: 20px;">BACK</button></div>`;
+
+  const screen = document.getElementById('gameover-screen');
+  screen.innerHTML = html;
+  showScreen('gameover');
+}
+
+function getLeaderboard() {
+  const raw = localStorage.getItem('game-wars-leaderboard');
+  return raw ? JSON.parse(raw) : [];
+}
+
+function saveLeaderboard(name, netWorth) {
+  const scores = getLeaderboard();
+  scores.push({name, netWorth});
+  scores.sort((a, b) => b.netWorth - a.netWorth);
+  localStorage.setItem('game-wars-leaderboard', JSON.stringify(scores.slice(0, 50)));
+}
+
+function endGame() {
+  const netWorth = gameState.cash + gameState.bank - gameState.debt + getInventoryValue();
+  const rating = getRating(netWorth);
+
+  saveLeaderboard(gameState.playerName, netWorth);
+
+  const screen = document.getElementById('gameover-screen');
+  screen.innerHTML = `
+    <h1>GAME OVER</h1>
+    <div class="go-reason">You've run out of days!</div>
+    <div class="go-stats">
+      <div><span class="label">Player:</span><span class="value">${gameState.playerName}</span></div>
+      <div><span class="label">Days Played:</span><span class="value">${gameState.maxDays}</span></div>
+      <div><span class="label">Final Net Worth:</span><span class="value">$${netWorth}</span></div>
+      <div><span class="label">Cash:</span><span class="value">$${gameState.cash}</span></div>
+      <div><span class="label">Bank:</span><span class="value">$${gameState.bank}</span></div>
+      <div><span class="label">Inventory Value:</span><span class="value">$${getInventoryValue()}</span></div>
+      <div><span class="label">Reputation:</span><span class="value">${gameState.reputation}/100</span></div>
+    </div>
+    <div class="go-rating">
+      <div class="rating-name">${rating.name}</div>
+      <div class="rating-desc">${rating.desc}</div>
+    </div>
+    <button class="menu-btn" onclick="showScreen('title')" style="margin-top: 20px;">MAIN MENU</button>
+  `;
+
+  showScreen('gameover');
+}
+
+function getRating(netWorth) {
+  if (netWorth < 0) return {name: "Bankruptcy", desc: "You went broke. Better luck next time."};
+  if (netWorth < 500) return {name: "Garage Sale Gopher", desc: "You're still finding games in garages."};
+  if (netWorth < 2500) return {name: "eBay Dabbler", desc: "You're making some pocket money on eBay."};
+  if (netWorth < 10000) return {name: "Flea Market Flipper", desc: "You know the dealer circuit now."};
+  if (netWorth < 30000) return {name: "Convention Regular", desc: "You're a known face at every convention."};
+  if (netWorth < 60000) return {name: "Retro Mogul", desc: "You're making real money in this business."};
+  if (netWorth < 150000) return {name: "Store Consigner", desc: "The local store knows your name."};
+  if (netWorth < 300000) return {name: "Store Owner", desc: "You own a retro game store!"};
+  if (netWorth < 500000) return {name: "Retro Empire", desc: "You're a legend in the collecting world."};
+  return {name: "Game Wars Champion", desc: "You've achieved ultimate victory!"};
+}
+
+// =============================================================================
+// INITIALIZATION
+// =============================================================================
+
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && gameState.screenName === 'game') {
+    e.preventDefault();
+    endDay();
+  }
+});
+
+// Initial render
+updateGameScreen();
+</script>
+</body>
+</html>
